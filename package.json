@@ -17,8 +17,8 @@
     "docker:stop": "docker-compose -f docker/docker-compose.yml down",
     "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
     "docker:deploy": "./scripts/docker-deploy.sh",
-    "cf:build": "next build",
-    "cf:deploy": "wrangler pages deploy .next --project-name navsphere"
+    "cf:build": "next-on-pages",
+    "cf:deploy": "wrangler pages deploy .vercel/output/static --project-name navsphere"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
@@ -96,6 +96,7 @@
     "sharp": "^0.34.5",
     "tailwindcss": "4.1.12",
     "typescript": "5.1.6",
+    "@cloudflare/next-on-pages": "^1.13.16",
     "wrangler": "^4.61.0"
   },
   "browser": {
