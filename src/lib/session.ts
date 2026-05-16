@@ -2,12 +2,18 @@ import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import type { SessionData } from '@/types/session'
 
-if (!process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET is not defined')
+const sessionSecret =
+  process.env.SESSION_SECRET ||
+  process.env.AUTH_SECRET ||
+  process.env.NEXTAUTH_SECRET ||
+  process.env.GITHUB_CLIENT_SECRET
+
+if (!sessionSecret) {
+  throw new Error('SESSION_SECRET or AUTH_SECRET is not defined')
 }
 
 const sessionOptions = {
-  password: process.env.SESSION_SECRET,
+  password: sessionSecret,
   cookieName: 'navsphere-session',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
