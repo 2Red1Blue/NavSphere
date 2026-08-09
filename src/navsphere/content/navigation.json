@@ -402,7 +402,16 @@
       "icon": "Box",
       "description": "开发者工具，工具包",
       "enabled": true,
-      "items": [],
+      "items": [
+        {
+          "id": "1779239298632",
+          "title": "GIthub",
+          "href": "https://www.github.com",
+          "description": "Github",
+          "icon": "/assets/images/default-website-icon.png",
+          "enabled": true
+        }
+      ],
       "subCategories": [
         {
           "id": "85e2f8e6-8b32-4452-9022-2ff45065ecf9",
@@ -428,14 +437,6 @@
           "description": "",
           "enabled": true,
           "items": [
-            {
-              "id": "1735265532154",
-              "title": "shadcn ",
-              "href": "https://ui.shadcn.com/",
-              "description": "Build your component library\nBeautifully designed components that you can copy and paste into your apps. Made with Tailwind CSS. Open source.",
-              "icon": "/assets/img_1735265752690.webp",
-              "enabled": true
-            },
             {
               "id": "1751433573273",
               "title": "shadcn ui  Theme",
@@ -475,6 +476,14 @@
               "href": "https://www.tinte.dev/",
               "description": "Create, convert, and export beautiful themes for VS Code, shadcn/ui, Rayso, TweakCN, terminals, and more. Generate semantic color palettes using OKLCH color space with live previews.",
               "icon": "/assets/favicon_1765594470605.webp"
+            },
+            {
+              "id": "1735265532154",
+              "title": "shadcn ",
+              "href": "https://ui.shadcn.com/",
+              "description": "Build your component library\nBeautifully designed components that you can copy and paste into your apps. Made with Tailwind CSS. Open source.",
+              "icon": "/assets/img_1735265752690.webp",
+              "enabled": true
             }
           ]
         },
@@ -829,6 +838,23 @@
               "href": "https://ahrefs.com/website-authority-checker",
               "description": "Free tool to check the &quot;authority&quot; of any website based on the quality and quantity of its external backlinks.",
               "icon": "/assets/favicon_1766148043836.webp",
+              "enabled": true
+            }
+          ]
+        },
+        {
+          "id": "f5ee5617-a118-4035-ba3a-cf969f9b3528",
+          "title": "基础设施平台",
+          "icon": "Book",
+          "description": "",
+          "enabled": true,
+          "items": [
+            {
+              "id": "1781510610796",
+              "title": "Resend · Email for developers",
+              "href": "https://resend.com/",
+              "description": "The best way to reach humans instead of spam folders. Deliver transactional and marketing emails at scale.",
+              "icon": "/assets/favicon_1781510616253.ico",
               "enabled": true
             }
           ]
