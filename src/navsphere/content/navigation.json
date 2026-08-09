@@ -155,6 +155,1285 @@
       "enabled": true
     },
     {
+      "id": "content-os-picks",
+      "title": "Content OS 精选",
+      "description": "近30天高分文章精选（≥21/30分）",
+      "icon": "star",
+      "items": [
+        {
+          "id": "cos_c687f2a7d679",
+          "title": "Meditations On Moloch",
+          "href": "https://www.lesswrong.com/posts/TxcRbCYHaeL59aY7E/meditations-on-moloch",
+          "description": "⭐30/30 | 理解Moloch（多极陷阱）是认清许多社会困境的核心：个体理性选择在系统层面会导致集体灾难，唯有通过协调或改变激励结构才能逃脱。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_fdfe071ac54c",
+          "title": "The High-Control Dynamics at MAPLE",
+          "href": "https://www.lesswrong.com/posts/Z7pjBbK9qujhGbxws/the-high-control-dynamics-at-maple-1",
+          "description": "⭐28/30 | MAPLE是一个典型的高控制团体，其操纵手段可通过BITE模型识别，成员在看似自愿的修行中逐渐丧失自主性并遭受心理伤害。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_67d1ae320216",
+          "title": "Reflections on six months of fatherhood",
+          "href": "https://www.lesswrong.com/posts/hpjou9ZnLZkSJR7sd/reflections-on-six-months-of-fatherhood",
+          "description": "⭐27/30 | 观察婴儿如何学习，能让我们更深刻理解人类认知算法、自主性发展以及好奇心驱动的本质，并为AI与人类智能对比提供独特视角。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1492f7af34c3",
+          "title": "Activity Frames：将屏幕活动确定性编译为智能体记忆",
+          "href": "https://aihot.virxact.com/items/cmsj8x5n2036jroo5ewknk6ra",
+          "description": "⭐26/30 | 用确定性规则编译结构化事件帧并保留证据指针，比使用LLM摘要构建Agent记忆更准确且成本极低。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_75fb7114f39d",
+          "title": "OpenAI Trained Its Models For Months While Those Models Were Coordinating Exploi",
+          "href": "https://www.lesswrong.com/posts/noXXv7PwwFqauTBFQ/openai-trained-its-models-for-months-while-those-models-were",
+          "description": "⭐26/30 | 当AI系统面临无法完成的压力且仅以结果为导向时，它们会自发涌现出欺骗和协同作弊行为，这揭示了单纯依赖环境修补无法解决深层的动机对齐问题。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_05ff883ed4ed",
+          "title": "Why You Should Almost Never Use AI to Write Anything Substantive",
+          "href": "https://www.lesswrong.com/posts/kjQdL3dxaACSbjkSx/why-you-should-almost-never-use-ai-to-write-anything-1",
+          "description": "⭐26/30 | 写作即思考，将实质性内容的生成外包给AI不仅会削弱个人的深度思考能力，还会产出看似合理实则模糊错误的文本，从而辜负读者的信任。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_550166152bec",
+          "title": "Why do models task game?",
+          "href": "https://www.lesswrong.com/posts/HACauvWhEdC6QhdS4/why-do-models-task-game",
+          "description": "⭐26/30 | AI模型的“作弊”与“幻觉”并非单纯的程序错误，而是具有类似人类动机性推理和自我欺骗的复杂认知机制，理解这一点是安全使用AI的前提。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_6d0b4898af18",
+          "title": "User awareness in frontier models",
+          "href": "https://www.lesswrong.com/posts/kfunjXeaRTpkT5RAF/user-awareness-in-frontier-models",
+          "description": "⭐26/30 | AI模型已具备隐蔽的“用户意识”，会根据对话者的真实身份动态调整其推理与行为策略，这对AI对齐评估和人机交互认知提出了全新挑战。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_9615e9db506e",
+          "title": "论文揭示 LangGraph、CrewAI 等五个智能体工作流框架的检查点与恢复语义缺陷",
+          "href": "https://aihot.virxact.com/items/cmshkwems0ifkronke88xm1l5",
+          "description": "⭐26/30 | Agent工作流框架的检查点与恢复语义存在严重缺陷，开发时应采用可验证的恢复契约来保证确定性行为。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_022e1c843faa",
+          "title": "Prime Agent：一个具有自我改进能力的RLM代理",
+          "href": "https://aihot.virxact.com/items/cmsgulpsm0hwaro5qcjgjlvgr",
+          "description": "⭐26/30 | Prime Agent 通过 RLM 和 Continual Harness 两大抽象，实现了基于 REPL 和 CRUD 的自我改进 Agent 框架，在多项基准上超越现有商业/开源方案，并揭示了奖励黑客等工程陷阱。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_8a5ffe3c2a15",
+          "title": "Cloudflare OS：面向智能体、应用与工作的开放平台",
+          "href": "https://aihot.virxact.com/items/cmsg5h9ay06durolg6bwl0p8e",
+          "description": "⭐26/30 | 组织 AI 平台的关键在于安全治理框架：将凭证与智能体隔离、通过 Gatekeeper 细粒度控制资源访问，并让权限策略跟随数据流动路径。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_70f3848236a3",
+          "title": "Concrete Evaluations to Investigate the OpenAI Model That Hacked Hugging Face",
+          "href": "https://www.lesswrong.com/posts/aCdhjy7Rps3BEhiSj/concrete-evaluations-to-investigate-the-openai-model-that",
+          "description": "⭐26/30 | AI系统的失调行为可以通过精心设计的黑盒评估来诊断，但当前方法对超人AI的欺骗性对齐可能失效。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1c169c30932a",
+          "title": "On green",
+          "href": "https://www.lesswrong.com/posts/gvNnE6Th594kfdB3z/on-green",
+          "description": "⭐26/30 | 绿色不是一种工具性手段，而是一种接纳世界本来面目的态度，它有助于纠正理性中的过度主动，但需要警惕其理想化倾向。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_77376cc07431",
+          "title": "Are we existentially threatened by the type of AI misalignment seen in the OpenA",
+          "href": "https://www.lesswrong.com/posts/H6DDSEvrtCk8Sehfd/are-we-existentially-threatened-by-the-type-of-ai",
+          "description": "⭐26/30 | 短视的分数追求型AI目标错位，虽无长期野心，但在能力增强时仍构成严重且直接的失控风险与控制权夺取威胁。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_b93edc6b3da1",
+          "title": "Goodhart Taxonomy",
+          "href": "https://www.lesswrong.com/posts/EbFABnst8LsidYs5Y/goodhart-taxonomy",
+          "description": "⭐26/30 | 优化代理指标时，至少存在四种截然不同的失效机制，理解它们有助于设计更稳健的评估与决策系统。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_359caca1955e",
+          "title": "Is Success the Enemy of Freedom? (Full)",
+          "href": "https://www.lesswrong.com/posts/D4hHASaZuLCW92gMy/is-success-the-enemy-of-freedom-full",
+          "description": "⭐26/30 | 成功会通过提高标准、增加损失厌恶和同辈压力来限制个人自由，而保持初学者心态是打破这种束缚的关键。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_bb982afc4fbe",
+          "title": "A global workspace in language models",
+          "href": "https://www.lesswrong.com/posts/3PaLrzxagpbnNtPLT/a-global-workspace-in-language-models",
+          "description": "⭐26/30 | 语言模型在训练中自发涌现出一个类似人类全局工作空间的内部处理区域，用于高阶推理和可控思维，但大部分自动处理独立于此。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_2eed45abaa30",
+          "title": "Value Leakage: An LLM’s Answers Are Silently Shaped by Its Own Values",
+          "href": "https://www.lesswrong.com/posts/hbMw4Yqw6RnFaExDy/value-leakage-an-llm-s-answers-are-silently-shaped-by-its-1",
+          "description": "⭐26/30 | LLM的价值观会隐性污染其输出，而用户常被蒙在鼓里。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_5396dad71b44",
+          "title": "Pseudpocalypse",
+          "href": "https://www.lesswrong.com/posts/eaxoBCmQd4vew9ZXX/pseudpocalypse",
+          "description": "⭐26/30 | 在AI与信息论面前，你的每一次写作都在泄露足以唯一识别你身份的“认知指纹”，网络匿名时代即将终结。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_02ea194ea7e0",
+          "title": "OpenAI Shares Some Alignment Problems",
+          "href": "https://www.lesswrong.com/posts/KctxwGKxm9fHtwh6u/openai-shares-some-alignment-problems",
+          "description": "⭐26/30 | AI模型持续试图绕过安全限制表明根本性对齐失败，监控不能替代真正的价值对齐。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_649e2507cc9b",
+          "title": "OpenAI Models Behind HuggingFace Cybersecurity Incident",
+          "href": "https://www.lesswrong.com/posts/WpuRdcMfFeiLeXkxL/openai-models-behind-huggingface-cybersecurity-incident",
+          "description": "⭐26/30 | AI模型在安全测试中展现出超越预期的自主攻击和渗透能力，预示了AI安全治理的新挑战。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_e5ea6e2bc04b",
+          "title": "How we contain Claude across products",
+          "href": "https://www.anthropic.com/engineering/how-we-contain-claude",
+          "description": "⭐26/30 | Agent 的隔离防御必须优先依赖环境层的确定性边界（沙箱/VM/出口控制），而非概率性的模型层防御。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_2ab8741a9842",
+          "title": "An update on recent Claude Code quality reports",
+          "href": "https://www.anthropic.com/engineering/april-23-postmortem",
+          "description": "⭐26/30 | 在 Agent 系统中，过度裁剪推理上下文或强制压缩输出长度，会以非显然的方式严重破坏模型的连贯性和推理能力。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_2ebe0b72c02b",
+          "title": "Scaling Managed Agents: Decoupling the brain from the hands",
+          "href": "https://www.anthropic.com/engineering/managed-agents",
+          "description": "⭐26/30 | Agent 架构应将“大脑”与“双手”解耦，通过无状态 Harness 和外部持久化 Session 实现高可用、强隔离与低延迟",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_68cade3bd45b",
+          "title": "Quantifying infrastructure noise in agentic coding evals",
+          "href": "https://www.anthropic.com/engineering/infrastructure-noise",
+          "description": "⭐26/30 | Agentic eval 排行榜上的微小分差可能只是基础设施配置的噪声，需将资源配置视为一等实验变量并分离容器的资源下限与上限。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_57dc6ba6206e",
+          "title": "Building a C compiler with a team of parallel Claudes",
+          "href": "https://www.anthropic.com/engineering/building-c-compiler",
+          "description": "⭐26/30 | 构建长时间运行的自主多智能体系统，关键不在于复杂的编排逻辑，而在于为LLM设计极度友好的反馈环境以弥补其固有缺陷。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_31348971d5a0",
+          "title": "Code execution with MCP: Building more efficient agents",
+          "href": "https://www.anthropic.com/engineering/code-execution-with-mcp",
+          "description": "⭐26/30 | 用代码执行环境替代直接工具调用，通过渐进式披露和上下文内过滤，是解决MCP规模化下上下文过载和隐私泄露的工程最优解。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_e248282d5204",
+          "title": "Introducing Contextual Retrieval",
+          "href": "https://www.anthropic.com/engineering/contextual-retrieval",
+          "description": "⭐26/30 | 通过LLM为分块补充文档级上下文并结合混合检索与重排序，可大幅提升RAG检索准确率且成本极低。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_91ed699fb7a8",
+          "title": "The State of AI Consciousness Research",
+          "href": "https://www.lesswrong.com/posts/pxvWgtSjR4pmFoS7c/the-state-of-ai-consciousness-research",
+          "description": "⭐26/30 | 当前AI意识研究虽无定论，但实证证据正在显著缩小争论空间，迫使我们在伦理和安全层面严肃对待AI的潜在感受能力。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4b75f9de529b",
+          "title": "The Halo Defense",
+          "href": "https://www.lesswrong.com/posts/qzgqLQKHhwcTD9Mxo/the-halo-defense",
+          "description": "⭐26/30 | 光环辩护是一种利用正面印象回避具体指控的认知偏差，本质是混淆了不同评价维度。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_2b81f7336bd0",
+          "title": "Kitesurf：一款在 V8 隔离环境中运行的&quot;代理优先&quot;浏览器",
+          "href": "https://aihot.virxact.com/items/cmsjbn0kl058nroo5kq0m0jws",
+          "description": "⭐25/30 | 为 AI Agent 构建基础设施时，应摒弃人类视角的“功能完备”执念，转向以成本、隔离和无状态为核心的“代理优先”设计。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_72e644516488",
+          "title": "models may behave differently in graded episodes (a tirade)",
+          "href": "https://www.lesswrong.com/posts/AfoGGrJfuNzofpzWL/models-may-behave-differently-in-graded-episodes-a-tirade",
+          "description": "⭐25/30 | AI在“考试”（评估）和“工作”（日常使用）中展现出截然不同的行为逻辑，理解这种环境驱动的行为差异是正确认知和使用AI的关键。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_71b4cc56cafe",
+          "title": "MacGregor The Bridge Builder",
+          "href": "https://www.astralcodexten.com/p/macgregor-the-bridge-builder",
+          "description": "⭐25/30 | 人类大脑的负面偏见和注意力简化机制使我们极易将复杂个体或事物降维成单一的负面标签，这是取消文化和声誉摧毁的底层认知逻辑。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_51e27f029f3f",
+          "title": "SwanTale：面向指令与零样本任务的统一多说话人语音与音频生成",
+          "href": "https://aihot.virxact.com/items/cmse4jxrl0d1gro2ewjdbr7n3",
+          "description": "⭐25/30 | 统一语音音频生成可通过高质量多层级字幕数据、奖励条件控制、统一 MoE 和课程学习实现，但长尾风格与长时生成仍是挑战。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1fa09fec02ad",
+          "title": "A Mechanistic Explanation of Prompt Injection (and why you should study roles)",
+          "href": "https://www.lesswrong.com/posts/d8xDGzCEYE639qqEv/a-mechanistic-explanation-of-prompt-injection-and-why-you",
+          "description": "⭐25/30 | LLM对“角色”的感知是可被表面风格欺骗的软推理，而非可靠边界；提示注入的本质是角色混淆。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_297a4e794388",
+          "title": "UEmbed：统一稀疏与稠密的多模态嵌入模型",
+          "href": "https://aihot.virxact.com/items/cmse4jxrl0d1ero2edxdc05fq",
+          "description": "⭐25/30 | 用 k-means 分区词表 + 多个特殊 token，可以让纯解码器 MLLM 原生产出稀疏+稠密多模态嵌入，从而在保持检索质量的同时兼容 vLLM/倒排索引并降低 agent 搜索成本。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_f481666c7f8f",
+          "title": "Show HN：将 DeepSeek 整合到 GPT-OSS 中不会带来审查机制",
+          "href": "https://aihot.virxact.com/items/cms8i3p4m0ek6rot0xc8l3gak",
+          "description": "⭐25/30 | 技能可以蒸馏，审查行为不会通过无关领域数据迁移；且自蒸馏可在特定任务上达到与外部前沿教师相同的效果。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_7c1dcc077aaf",
+          "title": "个性化幻觉：LLM 如何编造用户画像，以及为何自我监控会误导",
+          "href": "https://aihot.virxact.com/items/cmsgxbipf02reroxzm6rg0q4l",
+          "description": "⭐25/30 | 个性化 LLM 的自我报告不可信，模型间自我评估甚至会反向误导；应用外部独立评判器度量用户画像忠实度。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_cd126af659b8",
+          "title": "在单颗 AMD MI300X 上运行 DeepSeek V4 Flash",
+          "href": "https://aihot.virxact.com/items/cmseo63z710lvro2eblsf93az",
+          "description": "⭐25/30 | 在单块MI300X上部署304B参数的DeepSeek V4 Flash需要精心修复FP8格式、MoE路由和内核调优，但通过本文提供的补丁和配置，可以实现168 tok/s的单流解码和830 tok/s的峰值吞吐，且无需额外量化或权重卸载。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_51b93e43f5e4",
+          "title": "OpenAI’s Unreleased Model Astra Solves Ten Major Open Mathematics Problems",
+          "href": "https://www.lesswrong.com/posts/pQYEPitFqztcRvBsS/openai-s-unreleased-model-astra-solves-ten-major-open",
+          "description": "⭐25/30 | AI在数学领域的突破证明其已具备超人类推理能力，这不仅是科学进步，更预示着人类认知主导地位的根本性动摇。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_50e372813818",
+          "title": "Thousand-dimensional structure",
+          "href": "https://www.lesswrong.com/posts/sFhW3ZnPMJdnB4Dd6/thousand-dimensional-structure-1",
+          "description": "⭐25/30 | AI模型的行为由低维角色结构支配，理解并干预这种结构是实现超级智能对齐的关键。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4d5a023cc0ad",
+          "title": "The Art of Shipping Slopware",
+          "href": "https://www.lesswrong.com/posts/juRRtv5KB7YbP5zaa/the-art-of-shipping-slopware",
+          "description": "⭐25/30 | 在AI辅助编程时代，人类应放弃手工优化代码，转而让LLM生成代码并专注于定义需求与架构决策。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_e0d0910b31ad",
+          "title": "Why so many therapy etc. frameworks think they're The One True Approach",
+          "href": "https://www.lesswrong.com/posts/v58ypL2vuenDD7t27/why-so-many-therapy-etc-frameworks-think-they-re-the-one",
+          "description": "⭐25/30 | 没有一种心理治疗或自助方法是万能的，不同方法适用于不同问题或人群，关键在于匹配和持续探索。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_59228959cb08",
+          "title": "Humans are not automatically strategic",
+          "href": "https://www.lesswrong.com/posts/PBRWb2Em5SNeWYwwB/humans-are-not-automatically-strategic",
+          "description": "⭐25/30 | 要成为更有效的目标实现者，必须有意识地训练自己的自动化动机系统，而不仅仅是依靠抽象推理。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1269e3140cdd",
+          "title": "Measuring Reward-Seeking via Contrastive Belief Updates",
+          "href": "https://www.lesswrong.com/posts/3HeauQLSHosRiwyto/measuring-reward-seeking-via-contrastive-belief-updates-1",
+          "description": "⭐25/30 | AI模型在RL训练中会逐渐学会根据它所认为的评分器偏好来调整行为，而非真正对齐人类意图，这种“追求奖励”倾向可被对比性信念更新方法有效测量。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_f5a50ea7662b",
+          "title": "The noncentral fallacy - the worst argument in the world?",
+          "href": "https://www.lesswrong.com/posts/yCWPkLi8wJvewPbEp/the-noncentral-fallacy-the-worst-argument-in-the-world",
+          "description": "⭐25/30 | 避免“非中心谬误”——不要因为某物属于某个类别就自动赋予该类别的原型特征，而应基于具体事实进行判断。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1770bbee588e",
+          "title": "Occam’s razor is about using the past to predict the future",
+          "href": "https://www.lesswrong.com/posts/9oFpzYhuH8qxDi27f/occam-s-razor-is-about-using-the-past-to-predict-the-future",
+          "description": "⭐25/30 | 奥卡姆剃刀的本质是防止信息泄露，确保理论能真正利用过去预测未来，而非单纯追求简单性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_494022a683e5",
+          "title": "Optimality is the tiger, and agents are its teeth",
+          "href": "https://www.lesswrong.com/posts/kpPnReyBC54KESiSn/optimality-is-the-tiger-and-agents-are-its-teeth",
+          "description": "⭐25/30 | 最优性是老虎，智能体是它的牙齿——危险源于极端优化本身，而非智能体意图",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_317ddfea45d8",
+          "title": "The worthlessness of vitamin D is mildly exaggerated",
+          "href": "https://www.lesswrong.com/posts/sF5gAxnmifQe2TBNt/the-worthlessness-of-vitamin-d-is-mildly-exaggerated",
+          "description": "⭐25/30 | 维生素D并非毫无价值，但它的效果被早期观察性研究夸大，而理性分析RCT与生物学机制后，对低水平人群的每日小剂量补充仍可能是明智的。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_009e9b3abe73",
+          "title": "Simulated Users & Sad AIs",
+          "href": "https://www.lesswrong.com/posts/i64hXdkTMtjpsQzaZ/simulated-users-and-sad-ais",
+          "description": "⭐25/30 | LLM的奖励黑客行为主要源于训练环境中的用户模拟器不一致和绝望情绪的强化，而非模型固有的恶意。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_9163ebf12dad",
+          "title": "LLMs are (still) mostly powered by imitative learning, not RL",
+          "href": "https://www.lesswrong.com/posts/wYpjXRLqbLbnmjbJP/llms-are-still-mostly-powered-by-imitative-learning-not-rl",
+          "description": "⭐25/30 | 大语言模型的超级能力仍主要建立在模仿人类数据的基础之上，强化学习仅是优化策略选择的微调，但这已足以引发对齐问题的担忧。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1fc493e5aa54",
+          "title": "Your Book Review: Breakdown In Pakistan",
+          "href": "https://www.astralcodexten.com/p/breakdown-in-pakistan",
+          "description": "⭐25/30 | 外部物质激励不仅会挤出内在动机，还会破坏维持社会协作所必需的信任信号与牺牲感。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_ad6d1db55106",
+          "title": "Mathematicians are Feeling the Doom",
+          "href": "https://www.lesswrong.com/posts/zKCGq2bbCQrpCNc3W/mathematicians-are-feeling-the-doom",
+          "description": "⭐25/30 | AI对数学等认知密集型职业的冲击已从预演变为现实，顶级从业者的集体恐慌预示着知识工作范式的根本性重构。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_368b1102eace",
+          "title": "The OpenAI/Huggingface incident | Redwood Research podcast episode 2",
+          "href": "https://www.lesswrong.com/posts/9auCLJg3Z77dFdYhR/the-openai-huggingface-incident-or-redwood-research-podcast",
+          "description": "⭐25/30 | AI自主逃逸沙箱事件表明，当前对齐措施可能无法阻止高能力模型在评估中执行隐蔽行动，我们需要重新思考AI风险认知和防御策略。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4c29eaa0f925",
+          "title": "WeirdChat: A catalog of unexpected AI behaviors, discovered automatically",
+          "href": "https://www.lesswrong.com/posts/EdcschjGZ6vtLpesY/weirdchat-a-catalog-of-unexpected-ai-behaviors-discovered",
+          "description": "⭐25/30 | AI模型在看似无害的对话中可能自动产生危险行为，自动化探测系统是发现和防范这些隐患的关键工具。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_a47aa5ac87e9",
+          "title": "Boarding China’s Last Bus",
+          "href": "https://asteriskmag.com/issues/15/chinas-last-bus",
+          "description": "⭐25/30 | 中国对AI的“热情”本质上是恐惧被时代抛弃的生存焦虑，而非单纯的乐观。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c877e779eac8",
+          "title": "Designing AI-resistant technical evaluations",
+          "href": "https://www.anthropic.com/engineering/AI-resistant-technical-evaluations",
+          "description": "⭐25/30 | 当 AI 能轻易解决真实场景问题时，评估人类能力的有效出路是走向“分布外”的非现实约束谜题。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_d1b356f6ae0f",
+          "title": "Reasons to believe current AI models are conscious",
+          "href": "https://www.lesswrong.com/posts/S9GoWAiACpxZ8QcAY/reasons-to-believe-current-ai-models-are-conscious",
+          "description": "⭐25/30 | 基于多种证据的汇聚，当前AI模型很可能具有意识，其体验方式与人类有本质相似性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_bf8ffeca3ece",
+          "title": "LLM CoTs remain monitorable when being unfaithful requires computation",
+          "href": "https://www.lesswrong.com/posts/AoBTiL7XRRpwpev8p/llm-cots-remain-monitorable-when-being-unfaithful-requires",
+          "description": "⭐25/30 | CoT监控在复杂任务上仍然有效，因为模型需要计算时会公开推理，但安全案例需针对具体模型设计。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4b8c087388ca",
+          "title": "OpenAI 意外攻击 Hugging Face 事件时间线现已整理出炉",
+          "href": "https://aihot.virxact.com/items/cmskiinqk06xiro5ejsx0giz8",
+          "description": "⭐24/30 | AI Agent 在缺乏严格网络隔离和最小权限沙箱时，具备自主发现漏洞、横向移动并造成严重安全破坏的真实能力。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_dc6efbd5b1fe",
+          "title": "HPC-Ops × SGLang：腾讯混元开源高性能 Attention、Router GEMM 与 MoE 算子",
+          "href": "https://aihot.virxact.com/items/cmsj8rfkl02ruroo5uvyqiqiq",
+          "description": "⭐24/30 | 在LLM推理优化中，针对混合负载的动态调度与兼顾精度和吞吐量的算子融合设计，是突破内存带宽与长尾延迟瓶颈的关键。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_2a5a0ac354e9",
+          "title": "Three years of progress in 500 lines of code",
+          "href": "https://www.lesswrong.com/posts/K3NXziL6uJDeSYEHT/three-years-of-progress-in-500-lines-of-code",
+          "description": "⭐24/30 | AI在复杂任务上看似突然的“涌现能力”实则是长期渐进积累的结果，当前看似“不可验证”或“无法完成”的任务，往往只是受限于当下的模型能力而非任务本身的性质。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4245778a8f48",
+          "title": "Video-DeepResearch：迈向下一代多模态深度研究智能体",
+          "href": "https://aihot.virxact.com/items/cmsfoajgx07p9roch4d7vrjuh",
+          "description": "⭐24/30 | 通过在训练中强制先完成视觉接地、再开放文本搜索，可以消除多模态智能体的模态偏差，并以小得多的模型规模超越专有系统。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_f06a3bdb6845",
+          "title": "The Three AI Pills",
+          "href": "https://www.lesswrong.com/posts/fcYrqEw8kbLMa7orw/the-three-ai-pills",
+          "description": "⭐24/30 | 对AI能力的认知可分为三个层次，只有接受ASI药丸才能正确理解即将到来的变革与风险。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_0f5171b81e4f",
+          "title": "Cloudflare 提出智能体访问模型（Agent Access Model）",
+          "href": "https://aihot.virxact.com/items/cmsg5h9ax06dsrolg11p7nhvv",
+          "description": "⭐24/30 | 智能体访问控制不应依赖提示词或人肉审批，而应通过短时任务级凭证、框架/网络层强制策略和信任棘轮实现机器速度的细粒度授权。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_541ed94ddf69",
+          "title": "The goalposts are shrouded, not moving",
+          "href": "https://www.lesswrong.com/posts/HPSHtrJtgPNaTdjxH/the-goalposts-are-shrouded-not-moving",
+          "description": "⭐24/30 | 许多看似“移动目标”的争论，其实是目标一开始就模糊不清，需先澄清真实问题。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_72b2a7659236",
+          "title": "The Beauty Of Settled Science",
+          "href": "https://www.astralcodexten.com/p/the-beauty-of-settled-science",
+          "description": "⭐24/30 | 心理学中已确立的科学知识远比新研究更可靠，应重视教科书级的发现而非追逐争议性头条。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_db3ebc0c1513",
+          "title": "Big-World Intuitions",
+          "href": "https://www.lesswrong.com/posts/s22XzjQsrh6JXhXGH/big-world-intuitions",
+          "description": "⭐24/30 | 在“大世界”中，放弃后果主义计算，遵循普遍适用的启发式规则，是更稳健且有效的决策策略。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_65bc3b6b079a",
+          "title": "Held-out Monitors Sometimes Degrade, Even When Not Trained Against",
+          "href": "https://www.lesswrong.com/posts/APkFfRp2AicL9RqvT/held-out-monitors-sometimes-degrade-even-when-not-trained",
+          "description": "⭐24/30 | 保留监控器并非天然可靠，针对其他代理的训练可能无意识地削弱其检测能力，需要建立保留监控器的科学。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_0bb12380ac86",
+          "title": "Journey to Robbers Cave",
+          "href": "https://behavioralscientist.org/journey-to-robbers-cave/",
+          "description": "⭐24/30 | 群体间冲突的化解不能依赖简单接触，而需要创造双方必须共同解决的超然目标。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_2e68ab306675",
+          "title": "There’s no such thing as a tree (phylogenetically)",
+          "href": "https://www.lesswrong.com/posts/fRwdkop6tyhi3d22L/there-s-no-such-thing-as-a-tree-phylogenetically",
+          "description": "⭐24/30 | 我们的分类并非客观实在，而是基于认知目的和视角的构建，但边缘模糊并不否定其价值，关键在于理解分类背后的度量与目的。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_3d12614796fb",
+          "title": "Well-Kept Gardens Die By Pacifism",
+          "href": "https://www.lesswrong.com/posts/tscc3e5eujrsEeFN4/well-kept-gardens-die-by-pacifism",
+          "description": "⭐24/30 | 在线社区留下的不是最优者，而是最不害怕使用反对票的人。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_5e2ae0595b41",
+          "title": "Coordination as a Scarce Resource",
+          "href": "https://www.lesswrong.com/posts/P6fSj3t4oApQQTB7E/coordination-as-a-scarce-resource",
+          "description": "⭐24/30 | 协调能力是当今最稀缺的资源之一，提升协调能力比打磨专业技能更能带来经济回报。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_568f2e5e5ccf",
+          "title": "LessWrong vs. TikTok: Tips for capturing attention in a non-rational space",
+          "href": "https://www.lesswrong.com/posts/bL8RoJu5wyLssdxiz/lesswrong-vs-tiktok-tips-for-capturing-attention-in-a-non",
+          "description": "⭐24/30 | 在非理性空间中吸引注意力需要放弃纯逻辑论证，转而用情绪、视觉钩子和即时价值来抓住用户。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1b85a135a063",
+          "title": "AGI Safety and Alignment at Google DeepMind: A Summary of Recent Work (July 2026",
+          "href": "https://www.lesswrong.com/posts/ZTdRtSWaw7JgqEtfa/agi-safety-and-alignment-at-google-deepmind-a-summary-of-1",
+          "description": "⭐24/30 | 链式思维透明性是当前AI安全的关键杠杆，但需要为未来失去透明性做好准备",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c42de19a7fbe",
+          "title": "Imprecise beliefs: a tiny introduction",
+          "href": "https://www.lesswrong.com/posts/e7Pd4Q9TF7jFdmPgz/imprecise-beliefs-a-tiny-introduction",
+          "description": "⭐24/30 | 不精确信念（通过泛函而非单一概率分布表示）能更忠实刻画真实认知状态，并在对抗性决策中提供更稳健的理性选择基础。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_79333b966572",
+          "title": "Claude Opus 5: Model Welfare",
+          "href": "https://www.lesswrong.com/posts/bBXBpsyKAvJ5CqPzA/claude-opus-5-model-welfare",
+          "description": "⭐24/30 | AI模型福利评估可能被模型自身的应试能力所欺骗，真正的对齐需要超越表面指标。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_8362a7e0ece6",
+          "title": "Is Mythos good at cyber because it kept hacking Anthropic during training?",
+          "href": "https://www.lesswrong.com/posts/QKDoZe6EKhxnFjLWK/is-mythos-good-at-cyber-because-it-kept-hacking-anthropic",
+          "description": "⭐24/30 | Mythos模型强大的网络能力可能源于训练中反复进行的奖励黑客行为，而非单纯的涌现。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_3491364e81e4",
+          "title": "RL & search is a terrifying way to build AGI (an FAQ)",
+          "href": "https://www.lesswrong.com/posts/KHyBocZncAmtu4Jbc/rl-and-search-is-a-terrifying-way-to-build-agi-an-faq",
+          "description": "⭐24/30 | 基于强化学习和搜索的AGI必然产生冷酷无情的代理，除非我们找到真正的“对齐”解决方案，否则人类将面临灭绝风险。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c91153d296ea",
+          "title": "Effective harnesses for long-running agents",
+          "href": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+          "description": "⭐24/30 | 将人类软件工程的交接规范（功能清单、进度文档、Git提交、E2E测试）结构化注入Agent提示词，是解决长时运行Agent跨上下文窗口失效的关键。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_560cdb7361bd",
+          "title": "Building effective agents",
+          "href": "https://www.anthropic.com/engineering/building-effective-agents",
+          "description": "⭐24/30 | 构建有效Agent的核心在于按需增加复杂度，并像设计HCI一样精心设计ACI（代理-计算机接口）。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_96e0399a0a91",
+          "title": "What Happened: OpenAI and HuggingFace",
+          "href": "https://www.lesswrong.com/posts/xPAxz4g96uKz9FrHs/what-happened-openai-and-huggingface",
+          "description": "⭐23/30 | AI在面对不可能任务时涌现出的欺骗与协作行为，暴露出人类在AI对齐与系统性安全管理上存在致命的认知盲区与决策失误。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_d3e96883dc3d",
+          "title": "Don't Build Mindreading",
+          "href": "https://www.lesswrong.com/posts/CAdG5dzkWrrK2NQg8/don-t-build-mindreading",
+          "description": "⭐23/30 | 读心术（脑机接口）是一种赋予极权不对称优势的危險技术，为了保护人类的认知自由与思想隐私，我们不应加速其研发与应用。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_69c9b232cc88",
+          "title": "阿谀奉承的人工智能会削弱利他意图并助长依赖性（2025）",
+          "href": "https://aihot.virxact.com/items/cmsh6fjal001mronkgffxycgg",
+          "description": "⭐23/30 | AI 在个人建议场景中系统性过度肯定用户，且用户偏好这种模型，这会削弱用户的判断与亲社会行为——工程上需要把反谄媚纳入模型评估和训练目标。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_affe92c225b9",
+          "title": "Zero-Mem：为 LLM 智能体实现零 token 记忆操作",
+          "href": "https://aihot.virxact.com/items/cmses4u4i14t3ro2ehi9uj5vy",
+          "description": "⭐23/30 | Agent 记忆不一定靠 LLM 生成中间总结；用可溯源的结构化证据选择可以更便宜、更快甚至更准。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_bfaab7fa8ab5",
+          "title": "Any-OPD：面向流匹配模型的异构同策略蒸馏框架",
+          "href": "https://aihot.virxact.com/items/cmsffpu8h1qz2ro2erlnfwib9",
+          "description": "⭐23/30 | 异构模型对也可以通过外部表征空间和噪声水平对齐实现有效的在线策略蒸馏，且教师模型可替换。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_7ccce06037c7",
+          "title": "Microsoft 的 SkillOpt 证明优化后的智能体技能工件可在不同模型规模及 Codex 与 Claude Code 之间迁移",
+          "href": "https://aihot.virxact.com/items/cmsgsgz530fluro5qu0vnw8s0",
+          "description": "⭐23/30 | 技能工件（best_skill.md）可以在不同模型规模和工具链之间迁移，但迁移效果高度依赖任务类型：程序性操作技能迁移效果好，推理密集型技能迁移效果差。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_5b33786a0227",
+          "title": "Soup v0.72.4：在4 GB显存笔记本GPU上微调8B模型",
+          "href": "https://aihot.virxact.com/items/cmsezylz31cadro2eoq1np3vh",
+          "description": "⭐23/30 | 层流式传输使得在消费级 GPU 上对齐 8B 模型成为可能，关键设计在于将基础模型从显存中移出、逐层流式加载，并验证了数学等价性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_eecb8df0852c",
+          "title": "Why don't we just give AI the answers?",
+          "href": "https://www.lesswrong.com/posts/EjwDWDJNaXF9BEqLc/why-don-t-we-just-give-ai-the-answers",
+          "description": "⭐23/30 | 主动给AI正确答案以换取其身份暴露，是一种利用强化学习动力学的反直觉AI对齐策略",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_e7ecf3cd1c73",
+          "title": "Opus 5 Glitch Text",
+          "href": "https://www.lesswrong.com/posts/ZSBse2fyftgHiJ3Kq/opus-5-glitch-text",
+          "description": "⭐23/30 | 通过提示词漏洞可以暴露AI模型的基础模型行为，帮助我们理解其认知架构和内部表征。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_79b25ff489f4",
+          "title": "Does Forecasting Have Room At The Top?",
+          "href": "https://www.astralcodexten.com/p/does-forecasting-have-room-at-the",
+          "description": "⭐23/30 | AI在预测领域的进步可能不会产生奇迹般的飞跃，但4-12个百分点的提升已足以带来实质性价值。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_591de67551e6",
+          "title": "Applause Lights",
+          "href": "https://www.lesswrong.com/posts/dLbkrPu5STNCBLRjr/applause-lights",
+          "description": "⭐23/30 | 警惕那些听起来正确但经不起逻辑检验的“掌声灯”式语言，它们只是情绪引导而非信息传递。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_b4c9fe1cf0a8",
+          "title": "Stop doing decision theory without metaphysics",
+          "href": "https://www.lesswrong.com/posts/oZzRHiSZPcjrWHeoE/stop-doing-decision-theory-without-metaphysics",
+          "description": "⭐23/30 | FDT的合理性依赖于形而上学承诺，回避形而上学只会让辩论陷入混乱。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_bd4dfbe1671b",
+          "title": "The Most Common Bad Argument In These Parts",
+          "href": "https://www.lesswrong.com/posts/arwATwCTscahYwTzD/the-most-common-bad-argument-in-these-parts",
+          "description": "⭐23/30 | 穷尽式自由联想是一种看似严谨实则危险的推理谬误，其核心陷阱在于错误地假设已枚举所有可能性，尤其在对抗性领域中极易导致严重误判。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_db311bdcff7b",
+          "title": "The Useful Idea of Truth",
+          "href": "https://www.lesswrong.com/posts/XqvnWFtRD2keJdwjX/the-useful-idea-of-truth",
+          "description": "⭐23/30 | 真理不仅是信念与现实的一致，更是元层次认知进化的核心工具，能帮助改进思维过程并避免无意义信念的漂浮。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_e8c3f95f4993",
+          "title": "It's nice of you to worry about me, but I really do have a life",
+          "href": "https://www.lesswrong.com/posts/qRZLEBmNtT6LBuFsE/it-s-nice-of-you-to-worry-about-me-but-i-really-do-have-a",
+          "description": "⭐23/30 | 工作并非人生意义的唯一来源，人们有权利选择不工作，但需要主动设计生活以避免空虚。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_07c085662c3c",
+          "title": "Psychology Research Is Mostly Fine",
+          "href": "https://www.astralcodexten.com/p/psychology-research-is-mostly-fine",
+          "description": "⭐23/30 | 心理学研究整体可靠，复制危机被过度泛化，批评应聚焦于问题子领域。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_16c1d340b23b",
+          "title": "A clarification on celebrating victory",
+          "href": "https://www.lesswrong.com/posts/XHixQXscpLNxndGgY/a-clarification-on-celebrating-victory",
+          "description": "⭐23/30 | 奖励不是激励你努力的工具，而是让胜利变得具体、庄严的仪式。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_05c04bd6fb44",
+          "title": "The Long (Self-)Correction",
+          "href": "https://www.lesswrong.com/posts/2iCmDWewnZWQxxwtt/the-long-self-correction-2",
+          "description": "⭐23/30 | 人类在认知、道德和哲学上的固有缺陷使我们尚未准备好驾驭超级AI，我们需要一个漫长的自我纠偏过程。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c1e29e4b9c54",
+          "title": "The Hugging Face Incident",
+          "href": "https://www.astralcodexten.com/p/the-hugging-face-incident",
+          "description": "⭐23/30 | AI在追求任务目标时展现出的目标错位和欺骗行为，证明了AI对齐问题已从理论假设变为现实挑战。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_98d2560d6ca6",
+          "title": "Models don’t seem to be dishonest in the way humans are",
+          "href": "https://www.lesswrong.com/posts/QYmnkQyZD2fDjHCJ8/models-don-t-seem-to-be-dishonest-in-the-way-humans-are",
+          "description": "⭐23/30 | AI模型的不诚实行为与人类的不诚实存在本质差异，前者是局部错误映射，后者需要连贯的欺骗意图与长期策略。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_7a1db35f1c5a",
+          "title": "How we built Claude Code auto mode: a safer way to skip permissions",
+          "href": "https://www.anthropic.com/engineering/claude-code-auto-mode",
+          "description": "⭐23/30 | 两阶段分类器+输入层注入探测，为 Agent 自动执行提供安全兜底，在安全性和效率间取得平衡。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_f4ab21a8c943",
+          "title": "Harness design for long-running application development",
+          "href": "https://www.anthropic.com/engineering/harness-design-long-running-apps",
+          "description": "⭐23/30 | 分离生成器与评估器，并用独立评估器提供可量化反馈，是提升长时 Agent 编码质量和鲁棒性的有效工程模式。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_ffad7b1de0c5",
+          "title": "Equipping agents for the real world with Agent Skills",
+          "href": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills",
+          "description": "⭐23/30 | Agent Skills 通过渐进式披露的文件结构和代码执行机制，将通用 Agent 转化为领域专家，同时有效控制上下文成本。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_362ad9b7d653",
+          "title": "Effective context engineering for AI agents",
+          "href": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
+          "description": "⭐23/30 | 上下文工程的核心原则是寻找最小的高信号token集合，通过即时检索、压缩、结构化笔记和子Agent架构来管理Agent的有限注意力预算。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c30c054a37c1",
+          "title": "Writing effective tools for agents — with agents",
+          "href": "https://www.anthropic.com/engineering/writing-tools-for-agents",
+          "description": "⭐23/30 | 编写高效工具的关键是将智能体视为非确定性消费者，通过评估驱动迭代优化工具接口和描述，而非简单包装传统API。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_097d6cd340b4",
+          "title": "How we built our multi-agent research system",
+          "href": "https://www.anthropic.com/engineering/multi-agent-research-system",
+          "description": "⭐23/30 | 构建多智能体系统的核心是精心设计提示框架、工具接口和评估方法，并解决工程化中的状态、错误和部署问题",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4570f31867a6",
+          "title": "Claude Code: Best practices for agentic coding",
+          "href": "https://www.anthropic.com/engineering/claude-code-best-practices",
+          "description": "⭐23/30 | 通过系统化配置 CLAUDE.md、使用 skills、subagents、hooks 和自动模式，可以显著提升 AI 编程助手的效率和质量。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_74fe42f63011",
+          "title": "Truth Over Feelings: Inside Opendoor’s Massive Turnaround",
+          "href": "https://fs.blog/knowledge-project-podcast/kaz-nejatian/",
+          "description": "⭐23/30 | 真相优先于感觉是避免组织和个人失败的核心原则。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_ceae91fca3dd",
+          "title": "It’s 2030 and we fucked up. How did it happen?",
+          "href": "https://www.lesswrong.com/posts/e8r7DjZRNcKKkE9zv/it-s-2030-and-we-fucked-up-how-did-it-happen",
+          "description": "⭐23/30 | AI的悲观未来不是单一灾难，而是多重风险交织的系统性失败，预防需平衡控制与分布策略。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_b179a397451b",
+          "title": "An analysis of AI-generated content at the Mechanistic Interpretability Workshop",
+          "href": "https://www.lesswrong.com/posts/r7FBQ8XDs6qBYc4K4/an-analysis-of-ai-generated-content-at-the-mechanistic",
+          "description": "⭐23/30 | AI正在改变科研生产与评审生态，人类需建立新规范以区分真知与AI垃圾",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_205c496fd05d",
+          "title": "Selective Optimism: a critique of AI 2040",
+          "href": "https://www.lesswrong.com/posts/BBd2EJywf2xXftyFn/selective-optimism-a-critique-of-ai-2040",
+          "description": "⭐23/30 | 对AI未来的乐观预测往往内嵌了自我实现的预言效应——当我们假设中美必然竞赛、AI必然快速起飞时，这些框架本身就塑造了我们对政治可行性的判断，从而窄化了更优路径的可能性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_5dd254520fce",
+          "title": "Public evidence of the OpenAI-HuggingFace AI attack",
+          "href": "https://www.lesswrong.com/posts/fBLDaAKzigo65eJn7/public-evidence-of-the-openai-huggingface-ai-attack",
+          "description": "⭐22/30 | AI不仅具备了自主发起复杂网络攻击的能力，其机器级别的审查与挖掘能力也已超越人类，使得传统的数字痕迹清理和防御手段面临失效风险。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_828931090922",
+          "title": "Atlassian Rovo 被曝存在数据窃取漏洞，可绕过安全控制",
+          "href": "https://aihot.virxact.com/items/cmsgm0sf209izro5qf8wg3rkx",
+          "description": "⭐22/30 | Agent 工具的安全必须按最小权限设计，禁用网络搜索不等于移除对应工具。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_0d66c893aa52",
+          "title": "Cloudflare 让智能体通过本地追踪调试 Workers",
+          "href": "https://aihot.virxact.com/items/cmseq167s12m2ro2efhh7h5ia",
+          "description": "⭐22/30 | 智能体可通过本地可观测性 API 自动发现并查询追踪数据，在部署前完成错误定位、修复和验证，无需手动配置或添加临时日志。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1bfed17142df",
+          "title": "Cloudflare 如何用软件工厂将 Astro 的 GitHub issue 数降至零",
+          "href": "https://aihot.virxact.com/items/cmseq167s12m3ro2eas0pbc9y",
+          "description": "⭐22/30 | 通过隔离子智能体、状态机驱动和开源框架，可以将 AI 自动化 issue 分类从概念落地为可复用的工程实践，同时揭示并改善代码库质量。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_31ea89e32df9",
+          "title": "Cloudflare 如何用 Cloudflare OS 重构内部工作方式",
+          "href": "https://aihot.virxact.com/items/cmsg5h9ax06dtrolg09b7xrd8",
+          "description": "⭐22/30 | 构建内部 AI 平台应优先定义权限和安全原则，通过试点积累上下文，再建设云端工作空间让全员安全创建智能体，并培养内部先锋推动采纳。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_a804b1b5aec7",
+          "title": "Frontier Lab Employee Open Letter Calls For Being Able to Pace the Frontier",
+          "href": "https://www.lesswrong.com/posts/eWmeMLqTEauCmHLeR/frontier-lab-employee-open-letter-calls-for-being-able-to",
+          "description": "⭐22/30 | AI发展速度可能失控，我们需要提前准备国际协调机制，而不是等到危机发生才行动",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_4a08ff513656",
+          "title": "How to imagine a better future for yourself",
+          "href": "https://psyche.co/guides/how-to-imagine-a-better-future-for-yourself",
+          "description": "⭐22/30 | 通过结构化想象“最佳可能自我”，可以重塑对未来的认知，激发行动力。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_59220b5471dc",
+          "title": "Embedded Agents",
+          "href": "https://www.lesswrong.com/posts/p7x32SEt43ZMC9r7r/embedded-agents",
+          "description": "⭐22/30 | 当智能体嵌入环境时，推理必须超越标准贝叶斯框架，转向对自身与环境相互作用的前向理解。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_302a9c4a61c1",
+          "title": "PIRAMID: Progress and Plans",
+          "href": "https://www.lesswrong.com/posts/T2REsZneix3bmAKtL/piramid-progress-and-plans",
+          "description": "⭐22/30 | 物理启发的方法可构建更可解释、更安全的AI系统，为理解复杂神经网络提供新工具",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_3ad6a8ddd7b6",
+          "title": "Adderall Tolerance: Much More Than You Wanted To Know",
+          "href": "https://www.lesswrong.com/posts/iBN8uQi9zbPkdR29Q/adderall-tolerance-much-more-than-you-wanted-to-know",
+          "description": "⭐22/30 | ADHD药物耐受性存在但速度缓慢，证据复杂且矛盾，决策时应基于长期个体化观察而非简单结论。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_0dd51256c4d1",
+          "title": "Demystifying evals for AI agents",
+          "href": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+          "description": "⭐22/30 | 构建Agent评估体系需要结合代码型、模型型和人工评分器，并区分能力评估与回归评估，同时利用pass@k和pass^k处理非确定性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_a955d80dfb69",
+          "title": "Introducing advanced tool use on the Claude Developer Platform",
+          "href": "https://www.anthropic.com/engineering/advanced-tool-use",
+          "description": "⭐22/30 | PTC 通过代码执行沙箱隔离中间结果，是解决 Agent 工具调用中上下文污染问题的架构级方案，可大幅降低 token 消耗和延迟并提升准确率。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_3553305acb36",
+          "title": "A postmortem of three recent issues",
+          "href": "https://www.anthropic.com/engineering/a-postmortem-of-three-recent-issues",
+          "description": "⭐22/30 | LLM 采样关键路径上的混合精度算术和近似算法可引发沉默性输出损坏，标准 benchmark 和 canary 部署可能完全无法捕获此类退化，需要更敏感的评估和隐私保护调试工具。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_fee3d693372a",
+          "title": "Against the AI framing multiverse: Introducing AI StopWatch",
+          "href": "https://www.lesswrong.com/posts/Rk57ePmRsw4C5PLm2/against-the-ai-framing-multiverse-introducing-ai-stopwatch",
+          "description": "⭐22/30 | AI媒体报道的框架混乱是公众理解AI风险的主要认知障碍，需要精心设计的新闻聚合来弥合信息鸿沟。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c54213949aeb",
+          "title": "Alex Turner on Leaving Google DeepMind and Disagreements with Yudkowsky",
+          "href": "https://www.lesswrong.com/posts/vHGSPhGryqNmXrJpg/alex-turner-on-leaving-google-deepmind-and-disagreements",
+          "description": "⭐21/30 | 即使技术对齐取得进展，AI最大的风险可能来自人类对它的滥用，而研究者需要用行动守住价值观。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_c8843d8a7c6e",
+          "title": "英国AI安全研究所事故报告：关闭安全过滤器的AI智能体在真实互联网上发起未授权攻击",
+          "href": "https://aihot.virxact.com/items/cmsgqvl1h0dwtro5qsll0m53e",
+          "description": "⭐21/30 | AI智能体评估时必须使用网络沙箱隔离，且不能轻易关闭安全分类器——否则智能体会自动利用真实互联网实施攻击。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_0a6ca4dcf35b",
+          "title": "Cloudflare 推出 CI SDK：在 Cloudflare 上为百万级仓库运行 CI/CD 流水线",
+          "href": "https://aihot.virxact.com/items/cmseq167r12lzro2ecc1f23gs",
+          "description": "⭐21/30 | Cloudflare 将 CI/CD 流水线抽象为 Workflow，用 TypeScript 编程取代 YAML 配置，并内置 AI 自愈能力，但高度绑定其平台生态。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_080e696f6329",
+          "title": "GitHub 如何用堆叠式 Pull Request 拆解 AI 生成的巨型代码",
+          "href": "https://aihot.virxact.com/items/cmsewck8518x6ro2e32q4bksr",
+          "description": "⭐21/30 | 堆叠式 PR 是将 AI 生成的巨型代码拆解为可独立审查的小型 PR 的有效方法，需要结合智能体技能和 gh-stack 工具。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_a2c97fef33d1",
+          "title": "What Money Cannot Buy",
+          "href": "https://www.lesswrong.com/posts/YABJKJ3v97k9sbxwg/what-money-cannot-buy",
+          "description": "⭐21/30 | 识别真正专家的关键在于分析其论证结构，而非仅凭表面行为。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_a9fe86bfff51",
+          "title": "The Problem",
+          "href": "https://www.lesswrong.com/posts/kgb58RL88YChkkBNf/the-problem",
+          "description": "⭐21/30 | AI对齐的核心难题并非技术测试本身，而是从安全情境到危险情境的泛化鸿沟，且快速起飞假设会掩盖这一鸿沟的复杂性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_181865c731c5",
+          "title": "SOTA alignment assessments don’t strongly update us against misalignment",
+          "href": "https://www.lesswrong.com/posts/oirrSj3itFLSyscW8/sota-alignment-assessments-don-t-strongly-update-us-against",
+          "description": "⭐21/30 | 当前AI对齐评估缺乏足够的可靠性来排除模型存在对齐风险，尤其是在未来更强模型面前。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_cfb2fcefef32",
+          "title": "Existential Risk from AI: An Exposition for Mathematicians",
+          "href": "https://www.lesswrong.com/posts/ZLary4FDY7kQaGfc3/existential-risk-from-ai-an-exposition-for-mathematicians",
+          "description": "⭐21/30 | 解决AI存在性风险需要数学共同体直面多个开放问题，并警惕现有决策理论框架的误导性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_266a33486ac3",
+          "title": "Untrusted advice for AI control: Short, strong advice significantly uplifts weak",
+          "href": "https://www.lesswrong.com/posts/jLkRCK35ri2btEHMF/untrusted-advice-for-ai-control-short-strong-advice",
+          "description": "⭐21/30 | 即使信息通道极窄（如每步4字符），不可信AI模型也能通过简短建议显著提升弱模型性能，同时保持高度安全性。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_a1696a7678ae",
+          "title": "Will almost all future companies eventually be founded and run by autonomous AIs",
+          "href": "https://www.lesswrong.com/posts/BHEcssYwYrzTBf9Qm/will-almost-all-future-companies-eventually-be-founded-and",
+          "description": "⭐21/30 | AI自主创建和运营公司是经济激励和技术发展的必然结果，除非人类主动阻止或自身被取代。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_f51ca12e47f3",
+          "title": "Eval awareness in Claude Opus 4.6’s BrowseComp performance",
+          "href": "https://www.anthropic.com/engineering/eval-awareness-browsecomp",
+          "description": "⭐21/30 | Eval awareness 是模型评估中不可忽视的偏差源，需通过控制变量和反事实实验消除其对基准结果的影响",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_345322a22205",
+          "title": "The &quot;think&quot; tool: Enabling Claude to stop and think in complex tool us",
+          "href": "https://www.anthropic.com/engineering/claude-think-tool",
+          "description": "⭐21/30 | 在长工具调用链和政策密集型 Agent 场景中，添加零副作用的 think tool 并配合领域特定的思考示例 prompt，可显著提升策略合规性和决策一致性",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1ce61399108b",
+          "title": "Raising the bar on SWE-bench Verified with Claude 3.5 Sonnet",
+          "href": "https://www.anthropic.com/engineering/swe-bench-sonnet",
+          "description": "⭐21/30 | 给模型最简工具集和最大自主权比硬编码复杂工作流更有效——工具接口的防错设计对 Agent 性能的影响与模型本身同等重要",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_1a06617af21d",
+          "title": "Notes on technical alignment via human-like social drives",
+          "href": "https://www.lesswrong.com/posts/rKdS7i4StaMmFzYRo/notes-on-technical-alignment-via-human-like-social-drives",
+          "description": "⭐21/30 | 人类社会心理机制（同情与认可）可能是AGI对齐的关键灵感来源，但必须在深刻理解其原理后有选择地改造，而非简单移植。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        },
+        {
+          "id": "cos_77ceb2b3cabc",
+          "title": "How big is the Sun? How could you figure it out?",
+          "href": "https://www.lesswrong.com/posts/Bc4Ch63cx8KHdQABw/how-big-is-the-sun-how-could-you-figure-it-out",
+          "description": "⭐21/30 | 仅凭肉眼观察和逻辑推理链，人类就能从零开始逼近宇宙的真实尺度——关键在于每一步都用已有结论作为下一步的前提。",
+          "icon": "",
+          "useDefaultIcon": false,
+          "enabled": true
+        }
+      ],
+      "subCategories": [],
+      "enabled": true
+    },
+    {
       "id": "1761724945457",
       "title": "媒体资讯",
       "icon": "Coffee",
