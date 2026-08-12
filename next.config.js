@@ -44,4 +44,19 @@ const nextConfig = {
   }
 }
 
+// Setup Cloudflare dev platform for local development
+async function setupDevPlatform() {
+  try {
+    const { setupDevPlatform } = await import('@cloudflare/next-on-pages/next-dev')
+    await setupDevPlatform()
+  } catch (e) {
+    console.warn('Cloudflare dev platform not available:', e.message)
+  }
+}
+
+// Only setup dev platform in development
+if (process.env.NODE_ENV === 'development') {
+  setupDevPlatform()
+}
+
 module.exports = nextConfig
