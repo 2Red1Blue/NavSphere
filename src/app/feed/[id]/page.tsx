@@ -91,7 +91,10 @@ function cleanContent(raw: string): string {
   if (fmMatch) {
     s = s.slice(fmMatch[0].length)
   }
-  // 2. 移除纯文本元数据行
+  // 2. 移除纯文本元数据行（单行或多行格式）
+  // 单行: "Source: ... Author: ... Published: ... URL: ..."
+  s = s.replace(/^Source:\s*.+(?:Author:\s*.+)?(?:Published:\s*.+)?(?:URL:\s*.+)?\n?/gm, '')
+  // 多行: 每行一个字段
   s = s.replace(/^(Source|Author|Published|URL):\s*.+\n?/gm, '')
   // 3. 移除开头的连续空行
   s = s.replace(/^\n+/, '')
