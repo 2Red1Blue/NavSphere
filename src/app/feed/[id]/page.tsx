@@ -99,7 +99,9 @@ function cleanContent(raw: string): string {
   s = s.replace(/^(Source|Author|Published|URL):\s*.+\n?/gm, '')
   // 4. 移除元数据后面的分隔线 (---) 如果紧接着元数据
   s = s.replace(/^---\n+/m, '')
-  // 5. 移除开头的连续空行
+  // 5. 移除开头的 # 标题行（已在页面 header 展示）
+  s = s.replace(/^#\s+.+\n+/, '')
+  // 6. 移除开头的连续空行
   s = s.replace(/^\n+/, '')
   return s.trim()
 }
