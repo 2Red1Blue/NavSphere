@@ -22,7 +22,7 @@ export default function HotPage() {
   const [timeWindow, setTimeWindow] = useState('48h')
 
   useEffect(() => {
-    fetch('/api/feed/hot')
+    fetch('/api/hot-topics')
       .then(r => r.json())
       .then(data => {
         setTopics(data.topics || [])
