@@ -8,6 +8,9 @@ binding = "DB"
 database_name = "content-os-feed"
 database_id = "d6208293-c1bb-4607-8782-f9d37ab5989a"
 
+[vars]
+CONTENT_OS_API_KEY = "aGdEpyGA8qW0EcPZKprBA-9KexPl-D8vqAp_Psevr2I"
+
 [env.production]
 [[env.production.d1_databases]]
 binding = "DB"
