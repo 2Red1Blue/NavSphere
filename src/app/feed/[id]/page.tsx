@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { ExternalLink, ArrowLeft, Star, Sparkles, Lightbulb, Target, BookOpen, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react'
+import { ExternalLink, ArrowLeft, Star, Sparkles, Lightbulb, Target, Copy, Check } from 'lucide-react'
 import { Button } from '@/registry/new-york/ui/button'
 import { Badge } from '@/registry/new-york/ui/badge'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
@@ -19,6 +19,17 @@ function formatDate(dateStr?: string): string {
   return new Date(dateStr).toLocaleDateString('zh-CN', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
+}
+
+// 过滤掉 YAML frontmatter 和元数据头部
+function cleanMarkdownContent(content: string): string {
+  // 移除 YAML frontmatter (--- ... ---)
+  let cleaned = content.replace(/^---[\s\S]*?---\n?/, '')
+  
+  // 移除可能的纯文本元数据行 (Source: ... Author: ... Published: ... URL: ...)
+  cleaned = cleaned.replace(/^(Source|Author|Published|URL):\s*.+\n?/gm, '')
+  
+  return cleaned.trim()
 }
 
 function ScoreBar({ icon: Icon, label, value, max, color }: {
@@ -69,13 +80,30 @@ const DOMAIN_LABELS: Record<string, string> = {
   'general': '综合',
 }
 
+/**
+ * 过滤掉 YAML frontmatter 和元数据行
+ * 原文格式: --- (YAML) --- + Source: / Author: / Published: / URL: 行
+ */
+function cleanContent(raw: string): string {
+  let s = raw
+  // 1. 移除 YAML frontmatter (--- ... ---)
+  const fmMatch = s.match(/^---\n[\s\S]*?\n---\n?/)
+  if (fmMatch) {
+    s = s.slice(fmMatch[0].length)
+  }
+  // 2. 移除纯文本元数据行
+  s = s.replace(/^(Source|Author|Published|URL):\s*.+\n?/gm, '')
+  // 3. 移除开头的连续空行
+  s = s.replace(/^\n+/, '')
+  return s.trim()
+}
+
 export default function FeedDetailPage() {
   const params = useParams()
   const id = params.id as string
   const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [contentExpanded, setContentExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -138,6 +166,7 @@ export default function FeedDetailPage() {
 
   const typeInfo = article.type ? TYPE_LABELS[article.type] : null
   const domainLabel = DOMAIN_LABELS[article.category] || article.category
+  const cleanedContent = article.content ? cleanContent(article.content) : null
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -276,29 +305,14 @@ export default function FeedDetailPage() {
           </div>
         </section>
 
-        {/* Full Article Content */}
-        {article.content && (
-          <section className="mb-8">
-            <button
-              onClick={() => setContentExpanded(!contentExpanded)}
-              className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors mb-4 group w-full"
-            >
-              <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-              <span>原文内容</span>
-              {contentExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-              )}
-            </button>
-
-            {contentExpanded && (
-              <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:tracking-tight prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:text-sm prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-img:rounded-lg prose-img:max-w-full prose-blockquote:border-l-primary prose-hr:border-border">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {article.content}
-                </ReactMarkdown>
-              </div>
-            )}
+        {/* Full Article Content — 直接展示，无折叠 */}
+        {cleanedContent && (
+          <section className="mb-8 pt-4 border-t">
+            <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:tracking-tight prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:text-sm prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-img:rounded-lg prose-img:max-w-full prose-blockquote:border-l-primary prose-hr:border-border">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {cleanedContent}
+              </ReactMarkdown>
+            </div>
           </section>
         )}
 
