@@ -91,11 +91,77 @@ function cleanContent(raw: string): string {
   // 6. 移除开头的连续空行
   s = s.replace(/^\n+/, '')
 
-  // 7. 修复段落分隔：连续两段纯文本行之间只有单 \n 的情况
-  //    只在两段非结构性文本之间插入空行（避免破坏列表、代码块等）
+  // 7. 先把缩进代码块转换为 fenced 代码块（避免被段落分隔打散）
+  s = convertIndentedCodeBlocks(s)
+  // 8. 修复段落分隔：连续两段纯文本行之间只有单 \n 的情况
   s = fixParagraphSpacing(s)
 
   return s.trim()
+}
+
+/**
+ * 将缩进代码块（4空格/tab 缩进）转换为 fenced 代码块（```）
+ * 避免后续段落分隔逻辑打散代码块
+ */
+function convertIndentedCodeBlocks(text: string): string {
+  const lines = text.split('\n')
+  const result: string[] = []
+  let i = 0
+  let inFencedBlock = false
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    // 追踪已有 fenced 代码块
+    if (line.trimStart().startsWith('```')) {
+      inFencedBlock = !inFencedBlock
+      result.push(line)
+      i++
+      continue
+    }
+    if (inFencedBlock) {
+      result.push(line)
+      i++
+      continue
+    }
+
+    // 检测缩进代码块：连续 >=2 行的 4空格/tab 缩进行
+    // （单行缩进可能是列表或引用，不当作代码块）
+    if (/^(    |\t)/.test(line) && line.trim() !== '') {
+      const codeLines: string[] = [line]
+      let j = i + 1
+      while (j < lines.length) {
+        const nextLine = lines[j]
+        // 继续收集：缩进行或空行（代码块内允许空行）
+        if (/^(    |\t)/.test(nextLine) || nextLine.trim() === '') {
+          codeLines.push(nextLine)
+          j++
+        } else {
+          break
+        }
+      }
+      // 至少2行才算代码块（排除列表续行等情况）
+      const nonEmptyCodeLines = codeLines.filter(l => l.trim() !== '')
+      if (nonEmptyCodeLines.length >= 2) {
+        // 移除尾部空行
+        while (codeLines.length > 0 && codeLines[codeLines.length - 1].trim() === '') {
+          codeLines.pop()
+        }
+        // 去除公共缩进（最少4空格）
+        const stripped = codeLines.map(l => l.replace(/^( {4}|\t)/, ''))
+        result.push('```')
+        result.push(...stripped)
+        result.push('```')
+        i = j
+        continue
+      }
+    }
+
+    result.push(line)
+    i++
+  }
+
+  return result.join('\n')
 }
 
 /**
@@ -128,6 +194,7 @@ function fixParagraphSpacing(text: string): string {
       l.startsWith('> ') ||
       l.startsWith('```') ||
       l.startsWith('|') ||
+      /^(    |\t)/.test(l) ||  // 缩进行（代码块或列表）
       /^\d+\.\s/.test(l) ||
       /^\s+$/.test(l)
 
