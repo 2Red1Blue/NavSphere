@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { Suspense, useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import type { FeedListResponse, FeedState } from '@/types/feed'
 import TimelineList from '@/components/feed/timeline-list'
@@ -14,7 +14,7 @@ import { Menu, Search } from 'lucide-react'
 const API_BASE = '/api/feed'
 const DEFAULT_LIMIT = 20
 
-export default function FeedPage() {
+function FeedContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   
@@ -177,5 +177,13 @@ export default function FeedPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function FeedPage() {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <FeedContent />
+    </Suspense>
   )
 }

@@ -6,7 +6,7 @@ interface TimelineCardProps {
     title: string
     source: string
     score: number
-    summary: string
+    summary?: string
     takeaway?: string
     discovered_at: string
     featured?: number
