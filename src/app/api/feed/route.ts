@@ -219,13 +219,14 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, source, url, category, topic, type, score, signal, novelty, usefulness, content_potential, published_at, discovered_at)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
+    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, content, source, url, category, topic, type, score, signal, novelty, usefulness, content_potential, published_at, discovered_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
     ON CONFLICT(url_hash) DO UPDATE SET
       title = excluded.title,
       original_title = excluded.original_title,
       summary = excluded.summary,
       takeaway = excluded.takeaway,
+      content = excluded.content,
       source = excluded.source,
       url = excluded.url,
       category = excluded.category,
@@ -244,7 +245,7 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
     validArticles.map((a) =>
       stmt.bind(
         a.url_hash, a.title, a.original_title, a.summary,
-        a.takeaway, a.source, a.url, a.category, a.topic, a.type,
+        a.takeaway, a.content || null, a.source, a.url, a.category, a.topic, a.type,
         a.score, a.signal, a.novelty, a.usefulness, a.content_potential,
         a.published_at, a.discovered_at
       )
