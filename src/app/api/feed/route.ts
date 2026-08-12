@@ -191,6 +191,7 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
       source: a.source,
       url: a.url,
       category: (a.category as string) || 'general',
+      topic: (a.topic as string) || null,
       score,
       signal: typeof a.signal === 'number' ? Math.max(0, Math.min(10, a.signal)) : 0,
       novelty: typeof a.novelty === 'number' ? Math.max(0, Math.min(10, a.novelty)) : 0,
@@ -206,8 +207,8 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, source, url, category, score, signal, novelty, usefulness, content_potential, published_at, discovered_at)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, source, url, category, topic, score, signal, novelty, usefulness, content_potential, published_at, discovered_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
     ON CONFLICT(url_hash) DO UPDATE SET
       title = excluded.title,
       original_title = excluded.original_title,
@@ -216,6 +217,7 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
       source = excluded.source,
       url = excluded.url,
       category = excluded.category,
+      topic = excluded.topic,
       score = excluded.score,
       signal = excluded.signal,
       novelty = excluded.novelty,
@@ -229,8 +231,8 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
     validArticles.map((a) =>
       stmt.bind(
         a.url_hash, a.title, a.original_title, a.summary,
-        a.takeaway, a.source, a.url, a.category, a.score,
-        a.signal, a.novelty, a.usefulness, a.content_potential,
+        a.takeaway, a.source, a.url, a.category, a.topic,
+        a.score, a.signal, a.novelty, a.usefulness, a.content_potential,
         a.published_at, a.discovered_at
       )
     )
