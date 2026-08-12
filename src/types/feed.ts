@@ -6,9 +6,12 @@ export interface Article {
   original_title?: string
   summary?: string
   takeaway?: string
+  content?: string
   source: string
   url: string
   category: string
+  topic?: string
+  featured?: number
   score: number
   signal: number
   novelty: number
@@ -19,6 +22,9 @@ export interface Article {
   created_at: string
 }
 
+// Alias for feed components
+export type FeedArticle = Article
+
 export interface FeedListResponse {
   data: Article[]
   pagination: {
@@ -28,6 +34,10 @@ export interface FeedListResponse {
     totalPages: number
   }
   categories: {
+    name: string
+    count: number
+  }[]
+  topics: {
     name: string
     count: number
   }[]

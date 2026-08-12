@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS articles (
   original_title    TEXT,
   summary           TEXT,
   takeaway          TEXT,
+  content           TEXT,                      -- Full article content (markdown)
   source            TEXT NOT NULL,
   url               TEXT NOT NULL,
   category          TEXT NOT NULL DEFAULT 'general',

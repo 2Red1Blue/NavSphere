@@ -14,6 +14,7 @@ const MAX_BATCH_SIZE = 50
 const MAX_TITLE_LENGTH = 500
 const MAX_SUMMARY_LENGTH = 5000
 const MAX_TAKEAWAY_LENGTH = 500
+const MAX_CONTENT_LENGTH = 100000
 
 function stripHtml(text: string): string {
   return text.replace(/<[^>]*>/g, '')
@@ -40,6 +41,8 @@ async function handleList(request: Request, db: D1Database) {
   const limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(url.searchParams.get('limit') || String(DEFAULT_LIMIT))))
   const category = url.searchParams.get('category') || ''
   const source = url.searchParams.get('source') || ''
+  const topic = url.searchParams.get('topic') || ''
+  const featured = url.searchParams.get('featured') === 'true'
   const q = url.searchParams.get('q') || ''
   const minScore = Math.max(0, parseInt(url.searchParams.get('min_score') || '0'))
   const sort = ALLOWED_SORT_FIELDS.includes(url.searchParams.get('sort') || '') ? url.searchParams.get('sort')! : 'discovered_at'
@@ -56,6 +59,15 @@ async function handleList(request: Request, db: D1Database) {
   if (source && source !== 'all') {
     conditions.push('source = ?')
     params.push(source)
+  }
+
+  if (topic && topic !== 'all') {
+    conditions.push('topic = ?')
+    params.push(topic)
+  }
+
+  if (featured) {
+    conditions.push('featured = 1')
   }
 
   if (minScore > 0) {
@@ -87,11 +99,16 @@ async function handleList(request: Request, db: D1Database) {
     `SELECT category as name, COUNT(*) as count FROM articles GROUP BY category ORDER BY count DESC`
   ).all()
 
+  const topicsResult = await db.prepare(
+    `SELECT topic as name, COUNT(*) as count FROM articles WHERE topic IS NOT NULL GROUP BY topic ORDER BY count DESC LIMIT 20`
+  ).all()
+
   return jsonResponse(
     {
       data: dataResult.results,
       pagination: { page, limit, total, totalPages },
       categories: categoriesResult.results,
+      topics: topicsResult.results,
     },
     200,
     { 'Cache-Control': 'public, s-maxage=60' }
@@ -170,6 +187,7 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
       original_title: a.original_title ? stripHtml(a.original_title as string) : null,
       summary: a.summary ? stripHtml(a.summary as string).slice(0, MAX_SUMMARY_LENGTH) : null,
       takeaway: a.takeaway ? stripHtml(a.takeaway as string).slice(0, MAX_TAKEAWAY_LENGTH) : null,
+      content: a.content ? String(a.content).slice(0, 100000) : null,
       source: a.source,
       url: a.url,
       category: (a.category as string) || 'general',

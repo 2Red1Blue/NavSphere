@@ -1,39 +1,38 @@
 'use client'
 
-export const runtime = 'edge'
-
 import { useState, useCallback, useEffect, useRef } from 'react'
-import type { Article, FeedListResponse, FeedState } from '@/types/feed'
-import { FeedList } from '@/components/feed/feed-list'
-import { FeedSidebar } from '@/components/feed/feed-sidebar'
-import { FeedSearch } from '@/components/feed/feed-search'
+import { useSearchParams, useRouter } from 'next/navigation'
+import type { FeedListResponse, FeedState } from '@/types/feed'
+import TimelineList from '@/components/feed/timeline-list'
+import SidebarNav from '@/components/feed/sidebar-nav'
 import { FeedSkeleton } from '@/components/feed/feed-skeleton'
 import { FeedEmpty } from '@/components/feed/feed-empty'
 import { FeedError } from '@/components/feed/feed-error'
 import { Button } from '@/registry/new-york/ui/button'
-import { Menu } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Menu, Search } from 'lucide-react'
 
 const API_BASE = '/api/feed'
 const DEFAULT_LIMIT = 20
 
 export default function FeedPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
   const [state, setState] = useState<FeedState>({ status: 'loading' })
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedSource, setSelectedSource] = useState('all')
-  const [minScore, setMinScore] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
-  const [allArticles, setAllArticles] = useState<Article[]>([])
-  const [categories, setCategories] = useState<{ name: string; count: number }[]>([])
-  const [sources, setSources] = useState<{ name: string; count: number }[]>([])
+  const [allArticles, setAllArticles] = useState<any[]>([])
+  const [topics, setTopics] = useState<{ name: string; count: number }[]>([])
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_LIMIT, total: 0, totalPages: 0 })
   const [loadingMore, setLoadingMore] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
+  const featured = searchParams.get('featured') === 'true'
+  const topic = searchParams.get('topic') || ''
+
   const fetchArticles = useCallback(
-    async (pageNum: number, category: string, source: string, score: number, query: string, append = false) => {
+    async (pageNum: number, append = false) => {
       if (abortRef.current) abortRef.current.abort()
       const controller = new AbortController()
       abortRef.current = controller
@@ -43,10 +42,9 @@ export default function FeedPage() {
         else setLoadingMore(true)
 
         const params = new URLSearchParams({ page: String(pageNum), limit: String(DEFAULT_LIMIT) })
-        if (category && category !== 'all') params.set('category', category)
-        if (source && source !== 'all') params.set('source', source)
-        if (score > 0) params.set('min_score', String(score))
-        if (query) params.set('q', query)
+        if (featured) params.set('featured', 'true')
+        if (topic) params.set('topic', topic)
+        if (searchQuery) params.set('q', searchQuery)
 
         const res = await fetch(`${API_BASE}?${params.toString()}`, { signal: controller.signal })
         if (!res.ok) {
@@ -61,14 +59,14 @@ export default function FeedPage() {
         } else {
           setAllArticles(data.data)
         }
-        setCategories(data.categories)
+        setTopics(data.topics || [])
         setPagination(data.pagination)
         setPage(pageNum)
 
         if (data.data.length === 0 && data.pagination.total === 0) {
           setState({ status: 'empty' })
         } else {
-          setState({ status: 'success', data: data.data, pagination: data.pagination, categories: data.categories })
+          setState({ status: 'success', data: data.data, pagination: data.pagination, categories: [] })
         }
       } catch (err) {
         if ((err as Error).name === 'AbortError') return
@@ -77,189 +75,107 @@ export default function FeedPage() {
         setLoadingMore(false)
       }
     },
-    []
+    [featured, topic, searchQuery]
   )
 
-  // Fetch sources separately
   useEffect(() => {
-    fetch('/api/feed/stats')
-      .then((r) => r.json())
-      .then((d) => setSources(d.topSources || []))
-      .catch(() => {})
-  }, [])
-
-  // Initial fetch
-  useEffect(() => {
-    fetchArticles(1, selectedCategory, selectedSource, minScore, searchQuery)
-  }, [selectedCategory, selectedSource, minScore, searchQuery, fetchArticles])
-
-  const handleReset = useCallback(() => {
-    setSelectedCategory('all')
-    setSelectedSource('all')
-    setMinScore(0)
-    setSearchQuery('')
-    setPage(1)
-  }, [])
+    fetchArticles(1)
+  }, [fetchArticles])
 
   const handleLoadMore = useCallback(() => {
-    const nextPage = page + 1
-    fetchArticles(nextPage, selectedCategory, selectedSource, minScore, searchQuery, true)
-  }, [page, selectedCategory, selectedSource, minScore, searchQuery, fetchArticles])
+    fetchArticles(page + 1, true)
+  }, [page, fetchArticles])
 
-  const hasMore = pagination.page < pagination.totalPages
-
-  const renderContent = () => {
-    switch (state.status) {
-      case 'loading':
-        return <FeedSkeleton />
-      case 'empty':
-        return <FeedEmpty />
-      case 'error':
-        return <FeedError message={state.message} onRetry={() => fetchArticles(1, 'all', 'all', 0, '')} />
-      default:
-        return null
-    }
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    fetchArticles(1)
   }
 
+  const hasMore = pagination.page < pagination.totalPages
   const showContent = state.status === 'success' || allArticles.length > 0
 
   return (
-    <div className="flex min-h-screen">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block sticky top-0 h-screen border-r bg-background">
-        <FeedSidebar
-          categories={categories}
-          sources={sources}
-          selectedCategory={selectedCategory}
-          selectedSource={selectedSource}
-          minScore={minScore}
-          onCategoryChange={setSelectedCategory}
-          onSourceChange={setSelectedSource}
-          onScoreChange={setMinScore}
-          onReset={handleReset}
-        />
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <div className="fixed left-0 top-0 bottom-0 w-64 bg-background shadow-xl">
-            <FeedSidebar
-              categories={categories}
-              sources={sources}
-              selectedCategory={selectedCategory}
-              selectedSource={selectedSource}
-              minScore={minScore}
-              onCategoryChange={(c) => { setSelectedCategory(c); setSidebarOpen(false) }}
-              onSourceChange={(s) => { setSelectedSource(s); setSidebarOpen(false) }}
-              onScoreChange={(s) => { setMinScore(s); setSidebarOpen(false) }}
-              onReset={() => { handleReset(); setSidebarOpen(false) }}
-              onClose={() => setSidebarOpen(false)}
-            />
+            <h1 className="text-xl font-bold">
+              {featured ? '⭐ 精选' : topic ? `主题: ${topic}` : '全部文章'}
+            </h1>
+
+            {/* Search */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-md ml-auto">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="搜索文章..."
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </form>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 min-w-0">
-        {/* Header */}
-        <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm border-b">
-          <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center gap-3">
-              {/* Mobile menu button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden shrink-0"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="打开侧边栏"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex gap-8">
+          {/* Sidebar */}
+          <SidebarNav topics={topics} />
 
-              <a href="/" className="text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="返回首页">
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </a>
+          {/* Mobile menu overlay */}
+          {mobileMenuOpen && (
+            <div className="fixed inset-0 z-40 lg:hidden">
+              <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+              <div className="fixed left-0 top-0 bottom-0 w-64 bg-background shadow-xl">
+                <SidebarNav topics={topics} />
+              </div>
+            </div>
+          )}
 
-              <div className="flex-1 min-w-0">
-                <h1 className="text-base font-semibold truncate">📰 Content OS 精选</h1>
-                <p className="hidden sm:block text-xs text-muted-foreground">
-                  AI 安全 · AI 工程 · 认知科学
+          {/* Timeline content */}
+          <main className="flex-1 min-w-0">
+            {showContent ? (
+              <>
+                <TimelineList articles={allArticles} />
+                {hasMore && (
+                  <div className="mt-8 text-center">
+                    <Button
+                      variant="outline"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? '加载中...' : '加载更多'}
+                    </Button>
+                  </div>
+                )}
+                <p className="mt-4 text-center text-sm text-muted-foreground">
+                  已显示 {allArticles.length} / {pagination.total} 篇
                 </p>
-              </div>
-
-              <div className="hidden sm:block w-48">
-                <FeedSearch onSearch={setSearchQuery} />
-              </div>
-            </div>
-
-            {/* Mobile search */}
-            <div className="mt-2 sm:hidden">
-              <FeedSearch onSearch={setSearchQuery} />
-            </div>
-          </div>
+              </>
+            ) : state.status === 'loading' ? (
+              <FeedSkeleton />
+            ) : state.status === 'empty' ? (
+              <FeedEmpty />
+            ) : state.status === 'error' ? (
+              <FeedError message={state.message} onRetry={() => fetchArticles(1)} />
+            ) : null}
+          </main>
         </div>
-
-        {/* Content area */}
-        <div className="px-4 sm:px-6 py-4 sm:py-6 max-w-2xl mx-auto">
-          {/* Active filters indicator */}
-          {(selectedCategory !== 'all' || selectedSource !== 'all' || minScore > 0) && (
-            <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
-              <span>筛选条件：</span>
-              {selectedCategory !== 'all' && (
-                <span className="bg-secondary px-2 py-0.5 rounded-full">{selectedCategory}</span>
-              )}
-              {selectedSource !== 'all' && (
-                <span className="bg-secondary px-2 py-0.5 rounded-full">{selectedSource}</span>
-              )}
-              {minScore > 0 && (
-                <span className="bg-secondary px-2 py-0.5 rounded-full">≥{minScore}分</span>
-              )}
-              <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>
-                清除
-              </Button>
-            </div>
-          )}
-
-          {showContent ? (
-            <>
-              {allArticles.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <p className="text-sm text-muted-foreground">没有匹配的文章</p>
-                  <Button variant="ghost" size="sm" className="mt-2" onClick={handleReset}>
-                    清除筛选
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <FeedList articles={allArticles} />
-                  {hasMore && (
-                    <div className="mt-8 text-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleLoadMore}
-                        disabled={loadingMore}
-                        className="min-w-[120px]"
-                      >
-                        {loadingMore ? '加载中...' : '加载更多'}
-                      </Button>
-                    </div>
-                  )}
-                  <p className="mt-4 text-center text-xs text-muted-foreground">
-                    已显示 {allArticles.length} / {pagination.total} 篇
-                  </p>
-                </>
-              )}
-            </>
-          ) : (
-            renderContent()
-          )}
-        </div>
-      </main>
+      </div>
     </div>
   )
 }

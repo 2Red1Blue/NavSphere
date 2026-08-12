@@ -124,7 +124,7 @@ export function Sidebar({ className, navigationData, siteInfo, onClose }: Sideba
               onClick={onClose}
             >
               <Newspaper className="h-4 w-4" />
-              <span>📰 Feed</span>
+              <span>Feed</span>
             </Link>
           </div>
 

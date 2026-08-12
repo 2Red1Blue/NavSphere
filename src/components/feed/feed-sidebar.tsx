@@ -67,7 +67,7 @@ export function FeedSidebar({
           onClick={onClose}
         >
           <Newspaper className="h-4 w-4" />
-          <span>📰 Feed 首页</span>
+          <span>Feed 首页</span>
         </Link>
       </div>
 
