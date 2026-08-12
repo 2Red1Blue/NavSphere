@@ -91,12 +91,15 @@ function cleanContent(raw: string): string {
   if (fmMatch) {
     s = s.slice(fmMatch[0].length)
   }
-  // 2. 移除纯文本元数据行（单行或多行格式）
-  // 单行: "Source: ... Author: ... Published: ... URL: ..."
+  // 2. 移除 Markdown 加粗格式的元数据行
+  // 格式: **Source:** ... / **Author:** ... / **Published:** ... / **URL:** ...
+  s = s.replace(/^\*\*(Source|Author|Published|URL):\*\*\s*.+\n?/gm, '')
+  // 3. 移除纯文本元数据行（单行或多行格式）
   s = s.replace(/^Source:\s*.+(?:Author:\s*.+)?(?:Published:\s*.+)?(?:URL:\s*.+)?\n?/gm, '')
-  // 多行: 每行一个字段
   s = s.replace(/^(Source|Author|Published|URL):\s*.+\n?/gm, '')
-  // 3. 移除开头的连续空行
+  // 4. 移除元数据后面的分隔线 (---) 如果紧接着元数据
+  s = s.replace(/^---\n+/m, '')
+  // 5. 移除开头的连续空行
   s = s.replace(/^\n+/, '')
   return s.trim()
 }
