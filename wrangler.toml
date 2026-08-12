@@ -3,6 +3,17 @@ compatibility_date = "2024-11-11"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "content-os-feed"
+database_id = "d6208293-c1bb-4607-8782-f9d37ab5989a"
+
+[env.production]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "content-os-feed"
+database_id = "d6208293-c1bb-4607-8782-f9d37ab5989a"
+
 [env.production.vars]
 GITHUB_OWNER = "2Red1Blue"
 GITHUB_REPO = "navsphere-data"
@@ -10,3 +21,4 @@ GITHUB_BRANCH = "main"
 NEXTAUTH_URL = "https://navsphere-4se.pages.dev"
 NEXT_PUBLIC_API_URL = "https://navsphere-4se.pages.dev"
 NODE_VERSION = "20.18.0"
+CONTENT_OS_API_KEY = "aGdEpyGA8qW0EcPZKprBA-9KexPl-D8vqAp_Psevr2I"
