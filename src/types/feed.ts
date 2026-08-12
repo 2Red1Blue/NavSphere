@@ -11,6 +11,7 @@ export interface Article {
   url: string
   category: string
   topic?: string
+  type?: string
   featured?: number
   score: number
   signal: number
@@ -34,6 +35,10 @@ export interface FeedListResponse {
     totalPages: number
   }
   categories: {
+    name: string
+    count: number
+  }[]
+  types: {
     name: string
     count: number
   }[]

@@ -22,7 +22,8 @@ function FeedContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [allArticles, setAllArticles] = useState<any[]>([])
-  const [topics, setTopics] = useState<{ name: string; count: number }[]>([])
+  const [categories, setCategories] = useState<{ name: string; count: number }[]>([])
+  const [types, setTypes] = useState<{ name: string; count: number }[]>([])
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_LIMIT, total: 0, totalPages: 0 })
   const [loadingMore, setLoadingMore] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -30,6 +31,8 @@ function FeedContent() {
 
   const featured = searchParams.get('featured') === 'true'
   const topic = searchParams.get('topic') || ''
+  const selectedCategory = searchParams.get('category') || 'all'
+  const selectedType = searchParams.get('type') || 'all'
 
   const fetchArticles = useCallback(
     async (pageNum: number, append = false) => {
@@ -44,6 +47,8 @@ function FeedContent() {
         const params = new URLSearchParams({ page: String(pageNum), limit: String(DEFAULT_LIMIT) })
         if (featured) params.set('featured', 'true')
         if (topic) params.set('topic', topic)
+        if (selectedCategory !== 'all') params.set('category', selectedCategory)
+        if (selectedType !== 'all') params.set('type', selectedType)
         if (searchQuery) params.set('q', searchQuery)
 
         const res = await fetch(`${API_BASE}?${params.toString()}`, { signal: controller.signal })
@@ -59,7 +64,8 @@ function FeedContent() {
         } else {
           setAllArticles(data.data)
         }
-        setTopics(data.topics || [])
+        setCategories(data.categories || [])
+        setTypes(data.types || [])
         setPagination(data.pagination)
         setPage(pageNum)
 
@@ -75,7 +81,7 @@ function FeedContent() {
         setLoadingMore(false)
       }
     },
-    [featured, topic, searchQuery]
+    [featured, topic, selectedCategory, selectedType, searchQuery]
   )
 
   useEffect(() => {
@@ -134,14 +140,60 @@ function FeedContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Sidebar */}
-          <SidebarNav topics={topics} />
+          <SidebarNav 
+            categories={categories}
+            types={types}
+            selectedCategory={selectedCategory}
+            selectedType={selectedType}
+            onCategoryChange={(cat) => {
+              const params = new URLSearchParams(searchParams.toString())
+              if (cat === 'all') {
+                params.delete('category')
+              } else {
+                params.set('category', cat)
+              }
+              router.push(`/feed?${params.toString()}`)
+            }}
+            onTypeChange={(type) => {
+              const params = new URLSearchParams(searchParams.toString())
+              if (type === 'all') {
+                params.delete('type')
+              } else {
+                params.set('type', type)
+              }
+              router.push(`/feed?${params.toString()}`)
+            }}
+          />
 
           {/* Mobile menu overlay */}
           {mobileMenuOpen && (
             <div className="fixed inset-0 z-40 lg:hidden">
               <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
               <div className="fixed left-0 top-0 bottom-0 w-64 bg-background shadow-xl">
-                <SidebarNav topics={topics} />
+                <SidebarNav 
+                  categories={categories}
+                  types={types}
+                  selectedCategory={selectedCategory}
+                  selectedType={selectedType}
+                  onCategoryChange={(cat) => {
+                    const params = new URLSearchParams(searchParams.toString())
+                    if (cat === 'all') {
+                      params.delete('category')
+                    } else {
+                      params.set('category', cat)
+                    }
+                    router.push(`/feed?${params.toString()}`)
+                  }}
+                  onTypeChange={(type) => {
+                    const params = new URLSearchParams(searchParams.toString())
+                    if (type === 'all') {
+                      params.delete('type')
+                    } else {
+                      params.set('type', type)
+                    }
+                    router.push(`/feed?${params.toString()}`)
+                  }}
+                />
               </div>
             </div>
           )}
