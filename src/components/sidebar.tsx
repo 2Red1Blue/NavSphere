@@ -10,7 +10,7 @@ import { ScrollArea } from '@/registry/new-york/ui/scroll-area'
 import type { NavigationData } from '@/types/navigation'
 import type { SiteConfig } from '@/types/site'
 import * as LucideIcons from 'lucide-react'
-import { ChevronDown, ChevronRight, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, X, Newspaper } from 'lucide-react'
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   navigationData: NavigationData
@@ -111,6 +111,25 @@ export function Sidebar({ className, navigationData, siteInfo, onClose }: Sideba
 
       <ScrollArea className="h-[calc(100vh-3.5rem)] px-3 py-2">
         <div className="space-y-1">
+          {/* Feed 入口 */}
+          <div className="py-2">
+            <Link
+              href="/feed"
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                pathname.startsWith('/feed')
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              )}
+              onClick={onClose}
+            >
+              <Newspaper className="h-4 w-4" />
+              <span>📰 Feed</span>
+            </Link>
+          </div>
+
+          <div className="border-b my-2" />
+
           {navigationData.navigationItems.map((category) => (
             <div key={category.id} className="py-2">
               <div className="flex items-center">
