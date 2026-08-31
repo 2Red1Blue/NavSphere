@@ -3,14 +3,25 @@ version: '3.8'
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
       - "80:3000"
     environment:
-      - NODE_ENV=production
-    env_file:
-      - .env.local
+      NODE_ENV: production
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?NEXTAUTH_URL is required}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      ADMIN_GITHUB_LOGINS: ${ADMIN_GITHUB_LOGINS:?ADMIN_GITHUB_LOGINS is required}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:?GITHUB_CLIENT_ID is required}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:?GITHUB_CLIENT_SECRET is required}
+      GITHUB_OWNER: ${GITHUB_OWNER:?GITHUB_OWNER is required}
+      GITHUB_REPO: ${GITHUB_REPO:?GITHUB_REPO is required}
+      GITHUB_BRANCH: ${GITHUB_BRANCH:-main}
+      GITHUB_PAT: ${GITHUB_PAT:?GITHUB_PAT is required}
+      CONTENT_OS_API_KEY: ${CONTENT_OS_API_KEY:?CONTENT_OS_API_KEY is required}
+      SUBMISSION_RATE_LIMIT_PER_HOUR: ${SUBMISSION_RATE_LIMIT_PER_HOUR:-5}
+      GA_ID: ${GA_ID:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]

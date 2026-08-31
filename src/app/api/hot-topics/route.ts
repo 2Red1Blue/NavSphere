@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       COUNT(*) as count,
       GROUP_CONCAT(url_hash, ',') as article_ids
     FROM articles 
-    WHERE discovered_at >= ?
+    WHERE approved_for_publication = 1 AND discovered_at >= ?
     GROUP BY source, category
     ORDER BY count DESC
     LIMIT 20
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       topic,
       COUNT(*) as count
     FROM articles 
-    WHERE discovered_at >= ? AND topic IS NOT NULL
+    WHERE approved_for_publication = 1 AND discovered_at >= ? AND topic IS NOT NULL
     GROUP BY topic
     ORDER BY count DESC
     LIMIT 20

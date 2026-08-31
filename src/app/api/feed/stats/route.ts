@@ -18,18 +18,20 @@ function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, 
 export async function GET() {
   const { env } = getRequestContext()
 
-  const totalResult = await env.DB.prepare('SELECT COUNT(*) as total FROM articles').first<{ total: number }>()
+  const totalResult = await env.DB.prepare(
+    'SELECT COUNT(*) as total FROM articles WHERE approved_for_publication = 1'
+  ).first<{ total: number }>()
 
   const todayResult = await env.DB.prepare(
-    "SELECT COUNT(*) as today FROM articles WHERE date(discovered_at) = date('now')"
+    "SELECT COUNT(*) as today FROM articles WHERE approved_for_publication = 1 AND date(discovered_at) = date('now')"
   ).first<{ today: number }>()
 
   const categories = await env.DB.prepare(
-    'SELECT category as name, COUNT(*) as count FROM articles GROUP BY category ORDER BY count DESC'
+    'SELECT category as name, COUNT(*) as count FROM articles WHERE approved_for_publication = 1 GROUP BY category ORDER BY count DESC'
   ).all<{ name: string; count: number }>()
 
   const topSources = await env.DB.prepare(
-    'SELECT source as name, COUNT(*) as count FROM articles GROUP BY source ORDER BY count DESC LIMIT 10'
+    'SELECT source as name, COUNT(*) as count FROM articles WHERE approved_for_publication = 1 GROUP BY source ORDER BY count DESC LIMIT 10'
   ).all<{ name: string; count: number }>()
 
   return jsonResponse(

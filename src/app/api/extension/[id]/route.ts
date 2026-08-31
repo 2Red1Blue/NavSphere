@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
-import type { NavigationData, NavigationItem } from '@/types/navigation'
+import { requireAdmin } from '@/lib/admin-auth'
+import { mutateJsonFile } from '@/lib/github'
+import type { NavigationCategory, NavigationData, NavigationItem } from '@/types/navigation'
 
 export const runtime = 'edge'
 
@@ -11,61 +11,60 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const session = await auth()
-    if (!session?.user?.accessToken) {
-      return new Response('Unauthorized', { status: 401 })
-    }
+    const admin = await requireAdmin()
+    if (!admin.ok) return admin.response
 
     const updatedItem: NavigationItem = await request.json()
-    const data = await getFileContent('src/navsphere/content/navigation.json') as NavigationData
-
-    // 确保更新的导航项包含所有必需的字段
-    const existingItem = data.navigationItems.find(item => item.id === id)
-    if (!existingItem) {
-      return new Response('Navigation item not found', { status: 404 })
-    }
-
-    // 更新导航项，保持原有的 ID
-    const mergedItem: NavigationItem = {
-      ...existingItem,
-      ...updatedItem,
-      id: id,
-      items: updatedItem.items || existingItem.items || [],
-      subCategories: [
-        ...(
-          [
-            ...(existingItem.subCategories || []),
-            ...(updatedItem.subCategories || [])
-          ].reduce((acc, sub) => {
-            const exist = acc.get(sub.id);
-            acc.set(sub.id, {
-              ...exist,
-              ...sub,
-              items: [
-                ...(exist?.items || []),
-                ...(sub.items || [])
-              ]
-            });
-            return acc;
-          }, new Map<string, NavigationItem>())
-        ).values()
-      ]
-    }
-
-    const updatedItems = data.navigationItems.map(item =>
-      item.id === id ? mergedItem : item
-    )
-
-    await commitFile(
+    let mergedItem: NavigationItem | undefined
+    await mutateJsonFile<NavigationData>(
       'src/navsphere/content/navigation.json',
-      JSON.stringify({ navigationItems: updatedItems }, null, 2),
       'Update navigation item',
-      session.user.accessToken
+      (data) => {
+        const existingItem = data.navigationItems.find(item => item.id === id)
+        if (!existingItem) throw new Error('Navigation item not found')
+        mergedItem = {
+          ...existingItem,
+          ...updatedItem,
+          id,
+          items: updatedItem.items || existingItem.items || [],
+          subCategories: [
+            ...new Map(
+              [
+                ...(existingItem.subCategories || []),
+                ...(updatedItem.subCategories || []),
+              ].map((subCategory) => {
+                const existingSubCategory = existingItem.subCategories?.find(
+                  (candidate) => candidate.id === subCategory.id,
+                )
+                return [
+                  subCategory.id,
+                  {
+                    ...existingSubCategory,
+                    ...subCategory,
+                    items: [
+                      ...new Map(
+                        [
+                          ...(existingSubCategory?.items || []),
+                          ...(subCategory.items || []),
+                        ].map((item) => [item.id, item]),
+                      ).values(),
+                    ],
+                  },
+                ] as [string, NavigationCategory]
+              }),
+            ).values(),
+          ],
+        }
+        return { navigationItems: data.navigationItems.map(item => item.id === id ? mergedItem! : item) }
+      },
     )
 
     return NextResponse.json(mergedItem)
   } catch (error) {
     console.error('Update error:', error)
+    if (error instanceof Error && error.message === 'Navigation item not found') {
+      return NextResponse.json({ error: error.message }, { status: 404 })
+    }
     return NextResponse.json({ error: 'Failed to update navigation' }, { status: 500 })
   }
 }

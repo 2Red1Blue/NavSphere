@@ -1,6 +1,7 @@
 'use client'
 
 import { Star, List, TrendingUp, Tags, FileText, BookOpen, Lightbulb, Newspaper, Wrench } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 interface SidebarNavProps {
   categories?: { name: string; count: number }[]
@@ -24,7 +25,7 @@ const CATEGORY_DISPLAY: Record<string, string> = {
 }
 
 // 类型图标和中文映射
-const TYPE_CONFIG: Record<string, { icon: any; label: string }> = {
+const TYPE_CONFIG: Record<string, { icon: LucideIcon; label: string }> = {
   'paper': { icon: FileText, label: '论文' },
   'tutorial': { icon: BookOpen, label: '教程' },
   'deep': { icon: Lightbulb, label: '深度' },

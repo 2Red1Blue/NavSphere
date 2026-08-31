@@ -31,7 +31,9 @@ export async function GET(
     return errorResponse('NOT_FOUND', 'Article ID is required', 404)
   }
 
-  const article = await env.DB.prepare('SELECT * FROM articles WHERE url_hash = ?')
+  const article = await env.DB.prepare(
+    'SELECT * FROM articles WHERE url_hash = ? AND approved_for_publication = 1'
+  )
     .bind(id)
     .first()
 

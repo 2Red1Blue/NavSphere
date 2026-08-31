@@ -2,9 +2,11 @@
 
 export const runtime = 'edge'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
+import Link from 'next/link'
 import remarkGfm from 'remark-gfm'
 import { ExternalLink, ArrowLeft, Star, Sparkles, Lightbulb, Target, Copy, Check, List } from 'lucide-react'
 import { Button } from '@/registry/new-york/ui/button'
@@ -369,8 +371,8 @@ export default function FeedDetailPage() {
   const headings = cleanedContent ? extractHeadings(cleanedContent) : []
 
   // 自定义 ReactMarkdown 组件映射：给 heading 加上 id
-  const components = {
-    h2: ({ children, ...props }: any) => {
+  const components: Components = {
+    h2: ({ children, ...props }) => {
       const text = typeof children === 'string' ? children : extractTextFromChildren(children)
       const id = text
         .toLowerCase()
@@ -380,7 +382,7 @@ export default function FeedDetailPage() {
         .slice(0, 60)
       return <h2 id={id} {...props}>{children}</h2>
     },
-    h3: ({ children, ...props }: any) => {
+    h3: ({ children, ...props }) => {
       const text = typeof children === 'string' ? children : extractTextFromChildren(children)
       const id = text
         .toLowerCase()
@@ -390,7 +392,7 @@ export default function FeedDetailPage() {
         .slice(0, 60)
       return <h3 id={id} {...props}>{children}</h3>
     },
-    h4: ({ children, ...props }: any) => {
+    h4: ({ children, ...props }) => {
       const text = typeof children === 'string' ? children : extractTextFromChildren(children)
       const id = text
         .toLowerCase()
@@ -407,13 +409,13 @@ export default function FeedDetailPage() {
       {/* 主内容区 */}
       <div className="flex-1 min-w-0 max-w-3xl">
         {/* Back */}
-        <a
+        <Link
           href="/feed"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group"
         >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           返回 Feed
-        </a>
+        </Link>
 
         <article>
           {/* Hero */}

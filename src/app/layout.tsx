@@ -1,8 +1,6 @@
 import "@/styles/globals.css"
-import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
-import { ThemeToggle } from '@/components/theme-toggle'
 import { Providers } from '@/components/providers'
 import type { Metadata } from 'next'
 import Script from 'next/script'
@@ -31,6 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const gaId = process.env.GA_ID
+  const serializedGaId = gaId ? JSON.stringify(gaId).replace(/</g, '\\u003c') : ''
 
   return (
     <html lang="zh-CN" suppressHydrationWarning className={inter.variable}>
@@ -46,15 +45,14 @@ export default function RootLayout({
             <Script
               id="google-analytics"
               strategy="afterInteractive"
-              dangerouslySetInnerHTML={{
-                __html: `
+            >
+              {`
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
-                  gtag('config', '${gaId}');
-                `,
-              }}
-            />
+                  gtag('config', ${serializedGaId});
+                `}
+            </Script>
           </>
         )}
       </head>

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { isAdminSession } from '@/lib/admin-auth'
 import { AdminLayoutClient } from './AdminLayoutClient'
 import { Toaster } from "@/registry/new-york/ui/toaster"
 import { Metadata } from 'next'
@@ -28,6 +29,10 @@ export default async function AdminLayout({
     redirect('/auth/signin')
   }
 
+  if (!isAdminSession(session)) {
+    redirect('/')
+  }
+
   return (
     <>
       <AdminLayoutClient
@@ -42,4 +47,4 @@ export default async function AdminLayout({
       <Toaster />
     </>
   )
-} 
+}

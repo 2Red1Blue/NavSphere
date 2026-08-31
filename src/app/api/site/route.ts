@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, GitHubFileNotFoundError, replaceJsonFile } from '@/lib/github'
 import type { SiteInfo } from '@/types/site'
 
 export const runtime = 'edge'
@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Failed to read site data:', error)
-    return NextResponse.json({
+    if (error instanceof GitHubFileNotFoundError) return NextResponse.json({
       basic: {
         title: '',
         description: '',
@@ -26,24 +26,22 @@ export async function GET() {
         linkTarget: '_blank'
       }
     })
+    return NextResponse.json({ error: 'Site data is unavailable' }, { status: 502 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user?.accessToken) {
-      return new Response('Unauthorized', { status: 401 })
-    }
+    const admin = await requireAdmin()
+    if (!admin.ok) return admin.response
 
     const data: SiteInfo = await request.json()
 
     // 提交到 GitHub
-    await commitFile(
+    await replaceJsonFile(
       'src/navsphere/content/site.json',
-      JSON.stringify(data, null, 2),
+      data,
       'Update site configuration',
-      session.user.accessToken
     )
 
     return NextResponse.json({ success: true })
@@ -54,4 +52,4 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-} 
+}

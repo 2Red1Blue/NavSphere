@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server'
 import { getFileContent } from '@/lib/github'
 import type { NavigationData } from '@/types/navigation'
 import type { SiteConfig } from '@/types/site'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const runtime = 'edge'
 
 export async function POST(request: Request) {
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
   try {
     const { resourcePaths } = await request.json()
 

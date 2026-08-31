@@ -3,6 +3,12 @@
 // POST /api/feed - Ingest articles from pipeline
 
 import { getRequestContext } from '@cloudflare/next-on-pages'
+import {
+  FEED_LIST_COLUMNS,
+  secureTokenEquals,
+  validateFeedArticle,
+  type FeedArticleInput,
+} from '@/lib/feed-api'
 
 export const runtime = 'edge'
 
@@ -11,15 +17,6 @@ const ALLOWED_ORDERS = ['asc', 'desc']
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
 const MAX_BATCH_SIZE = 50
-const MAX_TITLE_LENGTH = 500
-const MAX_SUMMARY_LENGTH = 5000
-const MAX_TAKEAWAY_LENGTH = 500
-const MAX_CONTENT_LENGTH = 100000
-
-function stripHtml(text: string): string {
-  return text.replace(/<[^>]*>/g, '')
-}
-
 function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -49,7 +46,7 @@ async function handleList(request: Request, db: D1Database) {
   const sort = ALLOWED_SORT_FIELDS.includes(url.searchParams.get('sort') || '') ? url.searchParams.get('sort')! : 'discovered_at'
   const order = ALLOWED_ORDERS.includes(url.searchParams.get('order') || '') ? url.searchParams.get('order')! : 'desc'
 
-  const conditions: string[] = []
+  const conditions: string[] = ['approved_for_publication = 1']
   const params: unknown[] = []
 
   if (category && category !== 'all') {
@@ -96,21 +93,21 @@ async function handleList(request: Request, db: D1Database) {
 
   const offset = (page - 1) * limit
   const dataResult = await db.prepare(
-    `SELECT * FROM articles ${whereClause} ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`
+    `SELECT ${FEED_LIST_COLUMNS.join(', ')} FROM articles ${whereClause} ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`
   )
     .bind(...params, limit, offset)
     .all()
 
   const categoriesResult = await db.prepare(
-    `SELECT category as name, COUNT(*) as count FROM articles GROUP BY category ORDER BY count DESC`
+    `SELECT category as name, COUNT(*) as count FROM articles WHERE approved_for_publication = 1 GROUP BY category ORDER BY count DESC`
   ).all()
 
   const typesResult = await db.prepare(
-    `SELECT type as name, COUNT(*) as count FROM articles WHERE type IS NOT NULL GROUP BY type ORDER BY count DESC`
+    `SELECT type as name, COUNT(*) as count FROM articles WHERE approved_for_publication = 1 AND type IS NOT NULL GROUP BY type ORDER BY count DESC`
   ).all()
 
   const topicsResult = await db.prepare(
-    `SELECT topic as name, COUNT(*) as count FROM articles WHERE topic IS NOT NULL GROUP BY topic ORDER BY count DESC LIMIT 20`
+    `SELECT topic as name, COUNT(*) as count FROM articles WHERE approved_for_publication = 1 AND topic IS NOT NULL GROUP BY topic ORDER BY count DESC LIMIT 20`
   ).all()
 
   return jsonResponse(
@@ -129,9 +126,9 @@ async function handleList(request: Request, db: D1Database) {
 // POST /api/feed - Ingest articles
 async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
   const authHeader = request.headers.get('Authorization') || ''
-  const token = authHeader.replace('Bearer ', '')
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
 
-  if (!apiKey || token !== apiKey) {
+  if (!(await secureTokenEquals(token, apiKey))) {
     return errorResponse('UNAUTHORIZED', 'Invalid or missing API key', 401)
   }
 
@@ -161,57 +158,12 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
     return errorResponse('VALIDATION_ERROR', `Batch size exceeds maximum of ${MAX_BATCH_SIZE}`, 422)
   }
 
-  const validArticles: Array<Record<string, unknown>> = []
+  const validArticles: FeedArticleInput[] = []
   const errors: string[] = []
   for (let i = 0; i < articles.length; i++) {
-    const a = articles[i] as Record<string, unknown>
-    if (!a.url_hash || typeof a.url_hash !== 'string' || a.url_hash.length > 64) {
-      errors.push(`Article ${i}: invalid url_hash`)
-      continue
-    }
-    if (!a.title || typeof a.title !== 'string' || a.title.length > MAX_TITLE_LENGTH) {
-      errors.push(`Article ${i}: invalid title`)
-      continue
-    }
-    if (!a.source || typeof a.source !== 'string' || a.source.length > 100) {
-      errors.push(`Article ${i}: invalid source`)
-      continue
-    }
-    if (!a.url || typeof a.url !== 'string' || a.url.length > 2048) {
-      errors.push(`Article ${i}: invalid url`)
-      continue
-    }
-    if (!a.discovered_at || typeof a.discovered_at !== 'string') {
-      errors.push(`Article ${i}: invalid discovered_at`)
-      continue
-    }
-
-    const score = typeof a.score === 'number' ? a.score : 0
-    if (score < 0 || score > 30) {
-      errors.push(`Article ${i}: score must be 0-30`)
-      continue
-    }
-
-    validArticles.push({
-      url_hash: a.url_hash,
-      title: stripHtml(a.title as string),
-      original_title: a.original_title ? stripHtml(a.original_title as string) : null,
-      summary: a.summary ? stripHtml(a.summary as string).slice(0, MAX_SUMMARY_LENGTH) : null,
-      takeaway: a.takeaway ? stripHtml(a.takeaway as string).slice(0, MAX_TAKEAWAY_LENGTH) : null,
-      content: a.content ? String(a.content).slice(0, 100000) : null,
-      source: a.source,
-      url: a.url,
-      category: (a.category as string) || 'general',
-      topic: (a.topic as string) || null,
-      type: (a.type as string) || null,
-      score,
-      signal: typeof a.signal === 'number' ? Math.max(0, Math.min(10, a.signal)) : 0,
-      novelty: typeof a.novelty === 'number' ? Math.max(0, Math.min(10, a.novelty)) : 0,
-      usefulness: typeof a.usefulness === 'number' ? Math.max(0, Math.min(10, a.usefulness)) : 0,
-      content_potential: a.content_potential || null,
-      published_at: a.published_at || null,
-      discovered_at: a.discovered_at,
-    })
+    const result = validateFeedArticle(articles[i])
+    if (result.valid) validArticles.push(result.article)
+    else errors.push(`Article ${i}: ${result.error}`)
   }
 
   if (errors.length > 0) {
@@ -219,40 +171,44 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, content, source, url, category, topic, type, score, signal, novelty, usefulness, content_potential, published_at, discovered_at)
-    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
+    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, content, source, url, category, topic, type, featured, score, signal, novelty, usefulness, content_potential, published_at, discovered_at, approved_for_publication)
+    VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
     ON CONFLICT(url_hash) DO UPDATE SET
       title = excluded.title,
       original_title = excluded.original_title,
       summary = excluded.summary,
       takeaway = excluded.takeaway,
-      content = excluded.content,
       source = excluded.source,
       url = excluded.url,
       category = excluded.category,
       topic = excluded.topic,
       type = excluded.type,
+      featured = excluded.featured,
       score = excluded.score,
       signal = excluded.signal,
       novelty = excluded.novelty,
       usefulness = excluded.usefulness,
       content_potential = excluded.content_potential,
       published_at = excluded.published_at,
-      discovered_at = excluded.discovered_at
+      discovered_at = excluded.discovered_at,
+      approved_for_publication = excluded.approved_for_publication
   `)
 
   const batchResults = await db.batch(
     validArticles.map((a) =>
       stmt.bind(
         a.url_hash, a.title, a.original_title, a.summary,
-        a.takeaway, a.content || null, a.source, a.url, a.category, a.topic, a.type,
+        a.takeaway, a.source, a.url, a.category, a.topic, a.type, a.featured,
         a.score, a.signal, a.novelty, a.usefulness, a.content_potential,
-        a.published_at, a.discovered_at
+        a.published_at, a.discovered_at, a.approved_for_publication
       )
     )
   )
 
-  const ingested = batchResults.filter((r) => r.success).length
+  const ingested = batchResults.filter((result) => result.success).length
+  if (ingested !== validArticles.length) {
+    return errorResponse('INGEST_FAILED', 'D1 did not confirm every article in the batch', 503)
+  }
 
   return jsonResponse({ ingested, total: validArticles.length }, 201)
 }

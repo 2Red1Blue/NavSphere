@@ -1,87 +1,39 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
-import type { NavigationItem, NavigationData } from '@/types/navigation'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, GitHubFileNotFoundError, replaceJsonFile } from '@/lib/github'
+import type { NavigationData } from '@/types/navigation'
 
 export const runtime = 'edge'
+const FILE_PATH = 'src/navsphere/content/videos.json'
 
-const VIDEOS_FILE_PATH = 'src/navsphere/content/videos.json'
+function validate(data: NavigationData): void {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.navigationItems)) {
+    throw new Error('Invalid videos data')
+  }
+}
 
 export async function GET() {
-    try {
-        const data = await getFileContent(VIDEOS_FILE_PATH)
-        return NextResponse.json(data)
-    } catch (error) {
-        console.error('Failed to fetch videos data:', error)
-        return NextResponse.json({
-            navigationItems: []
-        })
-    }
+  try {
+    return NextResponse.json(await getFileContent<NavigationData>(FILE_PATH))
+  } catch (error) {
+    console.error('Failed to fetch videos data:', error)
+    if (error instanceof GitHubFileNotFoundError) return NextResponse.json({ navigationItems: [] })
+    return NextResponse.json({ error: 'Videos data is unavailable' }, { status: 502 })
+  }
 }
 
-async function validateAndSaveVideosData(data: NavigationData, accessToken: string) {
-    if (!data || typeof data !== 'object') {
-        throw new Error('Invalid videos data: not an object')
-    }
-
-    if (!('navigationItems' in data)) {
-        throw new Error('Invalid videos data: missing navigationItems')
-    }
-
-    if (!Array.isArray(data.navigationItems)) {
-        throw new Error('Invalid videos data: navigationItems must be an array')
-    }
-
-    await commitFile(
-        VIDEOS_FILE_PATH,
-        JSON.stringify(data, null, 2),
-        'Update videos data',
-        accessToken
-    )
+async function write(request: Request) {
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
+  try {
+    const data = await request.json() as NavigationData
+    validate(data)
+    await replaceJsonFile(FILE_PATH, data, 'Update videos data')
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to save videos data', details: (error as Error).message }, { status: 500 })
+  }
 }
 
-export async function POST(request: Request) {
-    try {
-        const session = await auth()
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 })
-        }
-
-        const data = await request.json()
-        await validateAndSaveVideosData(data, session.user.accessToken)
-
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        console.error('Failed to save videos data:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to save videos data',
-                details: (error as Error).message
-            },
-            { status: 500 }
-        )
-    }
-}
-
-export async function PUT(request: Request) {
-    try {
-        const session = await auth()
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 })
-        }
-
-        const data = await request.json()
-        await validateAndSaveVideosData(data, session.user.accessToken)
-
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        console.error('Failed to update videos data:', error)
-        return NextResponse.json(
-            {
-                error: 'Failed to update videos data',
-                details: (error as Error).message
-            },
-            { status: 500 }
-        )
-    }
-}
+export const POST = write
+export const PUT = write

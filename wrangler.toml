@@ -8,8 +8,8 @@ binding = "DB"
 database_name = "content-os-feed"
 database_id = "d6208293-c1bb-4607-8782-f9d37ab5989a"
 
-[vars]
-CONTENT_OS_API_KEY = "aGdEpyGA8qW0EcPZKprBA-9KexPl-D8vqAp_Psevr2I"
+# Secrets must be configured with `wrangler secret put`, never committed here.
+# Example: wrangler secret put CONTENT_OS_API_KEY
 
 [env.production]
 [[env.production.d1_databases]]
@@ -17,11 +17,5 @@ binding = "DB"
 database_name = "content-os-feed"
 database_id = "d6208293-c1bb-4607-8782-f9d37ab5989a"
 
-[env.production.vars]
-GITHUB_OWNER = "2Red1Blue"
-GITHUB_REPO = "navsphere-data"
-GITHUB_BRANCH = "main"
-NEXTAUTH_URL = "https://navsphere-4se.pages.dev"
-NEXT_PUBLIC_API_URL = "https://navsphere-4se.pages.dev"
-NODE_VERSION = "20.18.0"
-CONTENT_OS_API_KEY = "aGdEpyGA8qW0EcPZKprBA-9KexPl-D8vqAp_Psevr2I"
+# Configure production variables in the Cloudflare dashboard and all sensitive
+# values (AUTH_SECRET, GITHUB_PAT, OAuth secret, API keys) with Wrangler secrets.

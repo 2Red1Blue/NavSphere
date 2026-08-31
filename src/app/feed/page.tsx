@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import type { FeedListResponse, FeedState } from '@/types/feed'
+import type { Article, FeedListResponse, FeedState } from '@/types/feed'
 import TimelineList from '@/components/feed/timeline-list'
 import SidebarNav from '@/components/feed/sidebar-nav'
 import { FeedSkeleton } from '@/components/feed/feed-skeleton'
@@ -21,7 +21,7 @@ function FeedContent() {
   const [state, setState] = useState<FeedState>({ status: 'loading' })
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
-  const [allArticles, setAllArticles] = useState<any[]>([])
+  const [allArticles, setAllArticles] = useState<Article[]>([])
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([])
   const [types, setTypes] = useState<{ name: string; count: number }[]>([])
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_LIMIT, total: 0, totalPages: 0 })

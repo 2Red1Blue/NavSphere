@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getFileContent } from '@/lib/github'
 import { NavigationCategory, NavigationItem, NavigationData } from '@/types/navigation'
+import { requireAdmin } from '@/lib/admin-auth'
 export const runtime = 'edge'
 
 export async function GET() {
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
   try {
     // 动态读取最新的导航数据，而不是静态导入
     const navigationData = await getFileContent('src/navsphere/content/navigation.json') as NavigationData
@@ -11,7 +14,6 @@ export async function GET() {
 
     // 计算一级分类数量
     const parentCategories = navigationItems.length
-    console.log('Parent categories:', parentCategories)
 
     // 计算二级分类数量
     const subCategories = navigationItems.reduce((total: number, category: NavigationItem) => {
@@ -43,7 +45,6 @@ export async function GET() {
       totalSites
     }
 
-    console.log('Sending stats:', result)
     return NextResponse.json(result)
   } catch (error) {
     console.error('Failed to fetch stats:', error)
@@ -52,4 +53,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-} 
+}

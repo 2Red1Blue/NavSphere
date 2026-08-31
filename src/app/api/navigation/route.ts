@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, GitHubFileNotFoundError, replaceJsonFile } from '@/lib/github'
 import type { NavigationData, NavigationItem } from '@/types/navigation'
 
 export const runtime = 'edge'
@@ -11,17 +11,12 @@ export async function GET() {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Failed to fetch navigation data:', error)
-    // 返回默认数据结构
-    return NextResponse.json({
-      navigationItems: []
-    })
+    if (error instanceof GitHubFileNotFoundError) return NextResponse.json({ navigationItems: [] })
+    return NextResponse.json({ error: 'Navigation data is unavailable' }, { status: 502 })
   }
 }
 
-async function validateAndSaveNavigationData(data: NavigationData, accessToken: string) {
-  // 详细的数据结构验证和日志
-  console.log('Received navigation data:', JSON.stringify(data, null, 2))
-
+async function validateAndSaveNavigationData(data: NavigationData) {
   // 严格验证数据结构
   if (!data || typeof data !== 'object') {
     console.error('Invalid data: not an object')
@@ -51,23 +46,20 @@ async function validateAndSaveNavigationData(data: NavigationData, accessToken: 
     throw new Error('Invalid navigation data: some items are malformed')
   }
 
-  await commitFile(
+  await replaceJsonFile(
     'src/navsphere/content/navigation.json',
-    JSON.stringify(data, null, 2),
+    data,
     'Update navigation data',
-    accessToken
   )
 }
 
 export async function POST(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user?.accessToken) {
-      return new Response('Unauthorized', { status: 401 })
-    }
+    const admin = await requireAdmin()
+    if (!admin.ok) return admin.response
 
     const data = await request.json()
-    await validateAndSaveNavigationData(data, session.user.accessToken)
+    await validateAndSaveNavigationData(data)
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -84,13 +76,11 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user?.accessToken) {
-      return new Response('Unauthorized', { status: 401 })
-    }
+    const admin = await requireAdmin()
+    if (!admin.ok) return admin.response
 
     const data = await request.json()
-    await validateAndSaveNavigationData(data, session.user.accessToken)
+    await validateAndSaveNavigationData(data)
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -103,4 +93,4 @@ export async function PUT(request: Request) {
       { status: 500 }
     )
   }
-} 
+}

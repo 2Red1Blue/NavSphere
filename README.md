@@ -123,12 +123,16 @@ cd NavSphere
 pnpm install
 ```
 
-3. **配置环境变量**
+3. **配置工作区根环境变量**
 ```bash
-cp .env.example .env.local
+cd ..
+cp .env.example .env
+chmod 600 .env
+cd NavSphere
 ```
 
-编辑 `.env.local` 文件，配置必要的环境变量（详见下方配置指南）
+编辑工作区根目录的 `.env`，配置必要的环境变量（详见下方配置指南）。
+不要创建 `.env.local`，也不要把任何凭证提交到 Git。
 
 4. **启动开发服务器**
 ```bash
@@ -143,7 +147,7 @@ pnpm dev
 
 ### 环境变量设置
 
-创建 `.env.local` 文件并配置以下变量：
+在工作区根目录 `.env` 中配置以下变量：
 
 ```env
 # GitHub OAuth App 配置
@@ -161,7 +165,11 @@ GITHUB_PAT=your-github-personal-access-token
 # NextAuth 配置
 NEXTAUTH_URL=http://localhost:3000
 AUTH_SECRET=your-random-auth-secret
+ADMIN_GITHUB_LOGINS=your-github-login
 NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# Feed 摄取（必须与 Cloudflare Secret 中的新值一致）
+CONTENT_OS_API_KEY=your-rotated-feed-api-key
 
 # Google Analytics 配置 (可选)
 GA_ID=your-google-analytics-id
@@ -312,11 +320,19 @@ GA_ID=your-google-analytics-id
 
 3. **环境变量配置**
    
-   在 Cloudflare Pages 环境变量中添加所有必需的环境变量
+   在 Cloudflare Pages 环境变量中先添加所有必需的环境变量；敏感值使用
+   Cloudflare Secret，不要写入 `wrangler.toml`。
 
-4. **自定义部署**
+4. **确认并执行数据库迁移**
    ```bash
-   # 本地构建并部署
+   # 先确认远端 D1 的迁移账本，特别是从旧 schema.sql 升级的数据库
+   pnpm run cf:migrations:list
+   pnpm run cf:migrate
+   ```
+
+5. **自定义部署**
+   ```bash
+   # 数据库迁移与 Pages 部署刻意分离，避免迁移失败导致部署流程半完成
    pnpm run cf:deploy
    ```
 
@@ -373,6 +389,9 @@ pnpm clean
 
 # Cloudflare Pages 部署
 pnpm run cf:build
+# 先检查迁移账本，再显式迁移；cf:deploy 不会自动修改远端数据库
+pnpm run cf:migrations:list
+pnpm run cf:migrate
 pnpm run cf:deploy
 
 # Docker 部署

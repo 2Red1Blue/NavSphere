@@ -1,152 +1,59 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
-import type { NavigationData, NavigationItem, NavigationSubItem } from '@/types/navigation'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, mutateJsonFile } from '@/lib/github'
+import type { NavigationData, NavigationSubItem } from '@/types/navigation'
 
 export const runtime = 'edge'
+const FILE_PATH = 'src/navsphere/content/videos.json'
+type Context = { params: Promise<{ id: string }> }
 
-const VIDEOS_FILE_PATH = 'src/navsphere/content/videos.json'
-
-export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        const { id } = await params
-        const data = await getFileContent(VIDEOS_FILE_PATH) as NavigationData
-        const item = data.navigationItems.find(item => item.id === id)
-
-        if (!item) {
-            return NextResponse.json({ error: 'Navigation not found' }, { status: 404 })
-        }
-
-        return NextResponse.json(item.items)
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 })
-    }
+export async function GET(_request: Request, { params }: Context) {
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
+  try {
+    const { id } = await params
+    const data = await getFileContent<NavigationData>(FILE_PATH)
+    const item = data.navigationItems.find((entry) => entry.id === id)
+    return item ? NextResponse.json(item.items ?? []) : NextResponse.json({ error: 'Navigation not found' }, { status: 404 })
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 })
+  }
 }
 
-export async function POST(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        const { id } = await params
-        const session = await auth()
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 })
-        }
-
-        const newItem: NavigationSubItem = await request.json()
-        const data = await getFileContent(VIDEOS_FILE_PATH) as NavigationData
-
-        const updatedItems = data.navigationItems.map(item => {
-            if (item.id === id) {
-                return {
-                    ...item,
-                    items: [...(item.items || []), newItem]
-                }
-            }
-            return item
-        })
-
-        await commitFile(
-            VIDEOS_FILE_PATH,
-            JSON.stringify({ navigationItems: updatedItems }, null, 2),
-            'Add video item',
-            session.user.accessToken
-        )
-
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to add item' }, { status: 500 })
-    }
+export async function POST(request: Request, { params }: Context) {
+  return updateItems(request, params, 'add')
 }
 
-export async function PUT(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        const { id } = await params
-        const session = await auth()
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 })
-        }
-
-        const { index, item }: { index: number, item: NavigationSubItem } = await request.json()
-        const data = await getFileContent(VIDEOS_FILE_PATH) as NavigationData
-
-        const navigation = data.navigationItems.find(nav => nav.id === id)
-        if (!navigation) {
-            return NextResponse.json({ error: 'Navigation not found' }, { status: 404 })
-        }
-
-        const updatedItems = [...(navigation.items || [])]
-        updatedItems[index] = item
-
-        const updatedNavigations = data.navigationItems.map(nav => {
-            if (nav.id === id) {
-                return {
-                    ...nav,
-                    items: updatedItems
-                }
-            }
-            return nav
-        })
-
-        await commitFile(
-            VIDEOS_FILE_PATH,
-            JSON.stringify({ navigationItems: updatedNavigations }, null, 2),
-            'Update video item',
-            session.user.accessToken
-        )
-
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to update item' }, { status: 500 })
-    }
+export async function PUT(request: Request, { params }: Context) {
+  return updateItems(request, params, 'replace')
 }
 
-export async function DELETE(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    try {
-        const { id } = await params
-        const session = await auth()
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 })
+export async function DELETE(request: Request, { params }: Context) {
+  return updateItems(request, params, 'delete')
+}
+
+async function updateItems(request: Request, params: Promise<{ id: string }>, action: 'add' | 'replace' | 'delete') {
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
+  try {
+    const { id } = await params
+    const body = await request.json() as NavigationSubItem | { index: number; item?: NavigationSubItem }
+    await mutateJsonFile<NavigationData>(FILE_PATH, `${action} video item`, (data) => ({
+      navigationItems: data.navigationItems.map((navigation) => {
+        if (navigation.id !== id) return navigation
+        const items = [...(navigation.items ?? [])]
+        if (action === 'add') items.push(body as NavigationSubItem)
+        else {
+          const { index, item } = body as { index: number; item?: NavigationSubItem }
+          if (!Number.isInteger(index) || index < 0 || index >= items.length) throw new Error('Invalid item index')
+          if (action === 'replace' && item) items[index] = item
+          else if (action === 'delete') items.splice(index, 1)
         }
-
-        const { index } = await request.json()
-        const data = await getFileContent(VIDEOS_FILE_PATH) as NavigationData
-
-        const navigation = data.navigationItems.find(nav => nav.id === id)
-        if (!navigation) {
-            return NextResponse.json({ error: 'Navigation not found' }, { status: 404 })
-        }
-
-        const updatedItems = (navigation.items || []).filter((_, i) => i !== index)
-        const updatedNavigations = data.navigationItems.map(nav => {
-            if (nav.id === id) {
-                return {
-                    ...nav,
-                    items: updatedItems
-                }
-            }
-            return nav
-        })
-
-        await commitFile(
-            VIDEOS_FILE_PATH,
-            JSON.stringify({ navigationItems: updatedNavigations }, null, 2),
-            'Delete video item',
-            session.user.accessToken
-        )
-
-        return NextResponse.json({ success: true })
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 })
-    }
+        return { ...navigation, items }
+      }),
+    }))
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json({ error: `Failed to ${action} item` }, { status: 500 })
+  }
 }

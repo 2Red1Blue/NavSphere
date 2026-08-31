@@ -2,16 +2,19 @@
 
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-import {
-  NameType,
-  Payload,
-  ValueType,
-} from "recharts/types/component/DefaultTooltipContent"
-
 import { cn } from "@/lib/utils"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
+
+function safeCssIdentifier(value: string) {
+  return /^[a-zA-Z0-9_-]+$/.test(value) ? value : null
+}
+
+function safeCssColor(value: string | undefined) {
+  if (!value || value.length > 128 || /[;{}<>]/.test(value)) return null
+  return value
+}
 
 export type ChartConfig = {
   [k in string]: {
@@ -73,36 +76,34 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = "Chart"
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+  const safeId = safeCssIdentifier(id)
   const colorConfig = Object.entries(config).filter(
-    ([_, config]) => config.theme || config.color
+    ([key, item]) => safeCssIdentifier(key) && (item.theme || item.color)
   )
 
-  if (!colorConfig.length) {
+  if (!safeId || !colorConfig.length) {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+  const stylesheet = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
+${prefix} [data-chart=${safeId}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    const safeColor = safeCssColor(color)
+    return safeColor ? `  --color-${key}: ${safeColor};` : null
   })
   .join("\n")}
 }
 `
-          )
-          .join("\n"),
-      }}
-    />
-  )
+    )
+    .join("\n")
+
+  return <style>{stylesheet}</style>
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip

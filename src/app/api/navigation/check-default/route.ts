@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { getFileContent } from '@/lib/github'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, GitHubFileNotFoundError } from '@/lib/github'
+import type { NavigationData } from '@/types/navigation'
 
 export const runtime = 'edge'
 
 export async function GET() {
   try {
-    const session = await auth()
-    if (!session?.user?.accessToken) {
-      return new Response('Unauthorized', { status: 401 })
-    }
+    const admin = await requireAdmin()
+    if (!admin.ok) return admin.response
 
     try {
-      const defaultData = await getFileContent('src/navsphere/content/navigation-default.json')
+      const defaultData = await getFileContent<NavigationData>('src/navsphere/content/navigation-default.json')
 
       // 验证文件格式
       const isValid = defaultData &&
@@ -26,7 +25,7 @@ export async function GET() {
       })
     } catch (error) {
       // 文件不存在
-      if ((error as Error).message.includes('404') || (error as Error).message.includes('not found')) {
+      if (error instanceof GitHubFileNotFoundError) {
         return NextResponse.json({
           exists: false,
           valid: false,

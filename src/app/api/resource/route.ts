@@ -1,146 +1,87 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, mutateJsonFile } from '@/lib/github'
 import type { ResourceMetadata } from '@/types/resource-metadata'
 import { uint8ArrayToBase64 } from '@/lib/buffer-utils'
 
 export const runtime = 'edge'
-
-
+const METADATA_PATH = 'src/navsphere/content/resource-metadata.json'
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+const IMAGE_DATA_URL = /^data:(image\/(?:png|jpeg|gif|webp));base64,([A-Za-z0-9+/=]+)$/
 
 export async function GET() {
-    try {
-        const data = await getFileContent('src/navsphere/content/resource-metadata.json') as ResourceMetadata
-        if (!data?.metadata || !Array.isArray(data.metadata)) {
-            throw new Error('Invalid data structure');
-        }
-        return NextResponse.json(data)
-    } catch (error) {
-        console.error('Failed to fetch resource metadata:', error)
-        return NextResponse.json({ error: 'Failed to fetch resource metadata' }, { status: 500 })
-    }
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
+  try {
+    const data = await getFileContent<ResourceMetadata>(METADATA_PATH)
+    if (!Array.isArray(data.metadata)) throw new Error('Invalid data structure')
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Failed to fetch resource metadata:', error)
+    return NextResponse.json({ error: 'Failed to fetch resource metadata' }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
-    try {
-        const session = await auth();
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 });
-        }
-
-        const { image, folder = 'assets', prefix = 'img' } = await request.json(); // Get the Base64 image, folder and prefix
-        const base64Data = image.split(",")[1]; // Extract the Base64 part
-        const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0)); // Convert Base64 to binary
-
-        // 获取上传结果，包含路径和 commit hash
-        const { path: imageUrl, commitHash } = await uploadImageToGitHub(binaryData, session.user.accessToken, folder, prefix);
-
-        // Handle metadata
-        const metadata = await getFileContent('src/navsphere/content/resource-metadata.json') as ResourceMetadata;
-        metadata.metadata.unshift({
-            commit: commitHash,  // 使用实际的 commit hash
-            hash: commitHash,    // 使用相同的 hash 作为资源标识
-            path: imageUrl
-        });
-
-        await commitFile(
-            'src/navsphere/content/resource-metadata.json',
-            JSON.stringify(metadata, null, 2),
-            'Update resource metadata',
-            session.user.accessToken
-        );
-
-        return NextResponse.json({ success: true, imageUrl });
-    } catch (error) {
-        console.error('Failed to save resource metadata:', error);
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Failed to save resource metadata' },
-            { status: 500 }
-        );
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
+  try {
+    const { image, folder = 'assets', prefix = 'img' } = await request.json() as Record<string, string>
+    const match = typeof image === 'string' ? image.match(IMAGE_DATA_URL) : null
+    if (!match) return NextResponse.json({ error: 'Invalid image data' }, { status: 400 })
+    const binaryData = Uint8Array.from(atob(match[2]), (char) => char.charCodeAt(0))
+    if (binaryData.byteLength > MAX_IMAGE_BYTES) return NextResponse.json({ error: 'Image is too large' }, { status: 413 })
+    if (!/^[a-zA-Z0-9/_-]{1,80}$/.test(folder) || !/^[a-zA-Z0-9_-]{1,40}$/.test(prefix)) {
+      return NextResponse.json({ error: 'Invalid asset path' }, { status: 400 })
     }
+    const extension = match[1].split('/')[1].replace('jpeg', 'jpg')
+    const { path: imageUrl, commitHash } = await uploadImageToGitHub(binaryData, folder, prefix, extension)
+    await mutateJsonFile<ResourceMetadata>(METADATA_PATH, 'Update resource metadata', (metadata) => ({
+      ...metadata,
+      metadata: [{ commit: commitHash, hash: commitHash, path: imageUrl }, ...metadata.metadata],
+    }))
+    return NextResponse.json({ success: true, imageUrl })
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to save resource metadata' }, { status: 500 })
+  }
 }
 
-// Function to upload image to GitHub
-async function uploadImageToGitHub(binaryData: Uint8Array, token: string, folder: string, prefix: string): Promise<{ path: string, commitHash: string }> {
-    const owner = process.env.GITHUB_OWNER!;
-    const repo = process.env.GITHUB_REPO!;
-    const branch = process.env.GITHUB_BRANCH || 'main'
-
-    // Ensure folder doesn't have leading/trailing slashes for clean path construction
-    const cleanFolder = folder.replace(/^\/+|\/+$/g, '');
-    const path = `/${cleanFolder}/${prefix}_${Date.now()}.png`; // Generate a unique path for the image
-    const githubPath = 'public' + path;
-
-    // Convert Uint8Array to Base64
-    const base64String = uint8ArrayToBase64(binaryData); // Use Buffer to convert to Base64
-    const currentFileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${githubPath}?ref=${branch}`
-    // Use fetch to upload the file to GitHub
-    const response = await fetch(currentFileUrl, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json',
-        },
-        body: JSON.stringify({
-            message: `Upload ${githubPath}`,
-            content: base64String, // Send only the Base64 string
-            branch: branch, // Explicitly specify the branch
-        }),
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to upload image to GitHub:', errorData);
-        throw new Error(`Failed to upload image to GitHub: ${errorData.message || 'Unknown error'}`);
-    }
-
-    const responseData = await response.json();
-    const commitHash = responseData.commit.sha; // 获取 commit hash
-
-    return { path, commitHash }; // Return the URL of the uploaded image
+async function uploadImageToGitHub(binaryData: Uint8Array, folder: string, prefix: string, extension: string) {
+  const owner = process.env.GITHUB_OWNER
+  const repo = process.env.GITHUB_REPO
+  const branch = process.env.GITHUB_BRANCH || 'main'
+  const token = process.env.GITHUB_PAT
+  if (!owner || !repo || !token) throw new Error('GitHub writes are not configured')
+  const cleanFolder = folder.replace(/^\/+|\/+$/g, '')
+  const path = `/${cleanFolder}/${prefix}_${crypto.randomUUID()}.${extension}`
+  const githubPath = `public${path}`
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${githubPath}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: `Upload ${githubPath}`, content: uint8ArrayToBase64(binaryData), branch }),
+  })
+  if (!response.ok) throw new Error(`Failed to upload image: HTTP ${response.status}`)
+  const result = await response.json() as { commit: { sha: string } }
+  return { path, commitHash: result.commit.sha }
 }
 
 export async function DELETE(request: Request) {
-    try {
-        const session = await auth();
-        if (!session?.user?.accessToken) {
-            return new Response('Unauthorized', { status: 401 });
-        }
-
-        const { resourceHashes } = await request.json();
-
-        if (!Array.isArray(resourceHashes) || resourceHashes.length === 0) {
-            return NextResponse.json({ error: 'Invalid resource hashes' }, { status: 400 });
-        }
-
-        // 获取当前的资源元数据
-        const metadata = await getFileContent('src/navsphere/content/resource-metadata.json') as ResourceMetadata;
-
-        // 过滤掉要删除的资源
-        const originalCount = metadata.metadata.length;
-        metadata.metadata = metadata.metadata.filter(item => !resourceHashes.includes(item.hash));
-        const deletedCount = originalCount - metadata.metadata.length;
-
-        // 更新资源元数据文件
-        await commitFile(
-            'src/navsphere/content/resource-metadata.json',
-            JSON.stringify(metadata, null, 2),
-            `Delete ${deletedCount} resource(s)`,
-            session.user.accessToken
-        );
-
-        // 注意：这里只是从元数据中删除了引用，实际的图片文件仍然存在于GitHub仓库中
-        // 如果需要删除实际文件，需要额外的GitHub API调用
-
-        return NextResponse.json({
-            success: true,
-            deletedCount,
-            message: `成功删除 ${deletedCount} 个资源`
-        });
-    } catch (error) {
-        console.error('Failed to delete resources:', error);
-        return NextResponse.json(
-            { error: error instanceof Error ? error.message : 'Failed to delete resources' },
-            { status: 500 }
-        );
+  const admin = await requireAdmin()
+  if (!admin.ok) return admin.response
+  try {
+    const { resourceHashes } = await request.json() as { resourceHashes: string[] }
+    if (!Array.isArray(resourceHashes) || resourceHashes.length === 0 || resourceHashes.length > 100) {
+      return NextResponse.json({ error: 'Invalid resource hashes' }, { status: 400 })
     }
+    const hashes = new Set(resourceHashes.filter((hash) => typeof hash === 'string' && hash.length <= 100))
+    let deletedCount = 0
+    await mutateJsonFile<ResourceMetadata>(METADATA_PATH, `Delete ${hashes.size} resource(s)`, (metadata) => {
+      const next = metadata.metadata.filter((item) => !hashes.has(item.hash))
+      deletedCount = metadata.metadata.length - next.length
+      return { ...metadata, metadata: next }
+    })
+    return NextResponse.json({ success: true, deletedCount })
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Failed to delete resources' }, { status: 500 })
+  }
 }

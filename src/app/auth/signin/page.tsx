@@ -24,8 +24,7 @@ function SignInContent() {
       setIsLoading(true)
       await signIn('github', {
         callbackUrl,
-        redirect: true,
-        scope: 'repo'
+        redirect: true
       })
     } catch (error) {
       setIsLoading(false)
@@ -123,4 +122,4 @@ export default function SignInPage() {
       <SignInContent />
     </Suspense>
   )
-} 
+}

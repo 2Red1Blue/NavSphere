@@ -13,7 +13,7 @@
 ### docker-compose.yml
 开发环境的Docker Compose配置：
 - 端口映射: 3000:3000
-- 环境变量通过 `.env.local` 文件加载
+- 仅从工作区根目录 `.env` 显式映射 NavSphere 所需变量
 - 包含健康检查配置
 
 ### docker-compose.prod.yml
@@ -47,28 +47,28 @@ docker build -f docker/Dockerfile -t navsphere:latest .
 
 2. **开发环境**
 ```bash
-docker-compose -f docker/docker-compose.yml up -d
+docker compose --env-file ../.env -f docker/docker-compose.yml up -d
 ```
 
 3. **生产环境**
 ```bash
-docker-compose -f docker/docker-compose.prod.yml up -d
+docker compose --env-file ../.env -f docker/docker-compose.prod.yml up -d
 ```
 
 ### 管理命令
 
 ```bash
 # 查看容器状态
-docker-compose -f docker/docker-compose.yml ps
+docker compose --env-file ../.env -f docker/docker-compose.yml ps
 
 # 查看日志
-docker-compose -f docker/docker-compose.yml logs -f
+docker compose --env-file ../.env -f docker/docker-compose.yml logs -f
 
 # 停止服务
-docker-compose -f docker/docker-compose.yml down
+docker compose --env-file ../.env -f docker/docker-compose.yml down
 
 # 重启服务
-docker-compose -f docker/docker-compose.yml restart
+docker compose --env-file ../.env -f docker/docker-compose.yml restart
 ```
 
 ## 环境要求
@@ -79,7 +79,7 @@ docker-compose -f docker/docker-compose.yml restart
 
 ## 注意事项
 
-1. **环境变量**: 确保项目根目录存在 `.env.local` 文件
+1. **环境变量**: 确保工作区根目录存在权限为 `0600` 的 `.env`；Compose 只向容器映射 NavSphere 所需变量
 2. **端口冲突**: 确保3000端口(开发)或80端口(生产)未被占用
 3. **健康检查**: 服务启动后会自动进行健康检查，确保服务正常运行
 4. **数据持久化**: 当前配置不包含数据卷，重启容器不会丢失数据(因为数据存储在GitHub)
@@ -95,7 +95,7 @@ docker-compose -f docker/docker-compose.yml restart
 
 2. **容器启动失败**
    - 检查环境变量配置
-   - 查看容器日志: `docker-compose -f docker/docker-compose.yml logs`
+   - 查看容器日志: `docker compose --env-file ../.env -f docker/docker-compose.yml logs`
    - 检查端口是否被占用
 
 3. **健康检查失败**

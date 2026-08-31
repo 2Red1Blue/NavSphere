@@ -1,19 +1,18 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { commitFile, getFileContent } from '@/lib/github'
+import { requireAdmin } from '@/lib/admin-auth'
+import { getFileContent, GitHubFileNotFoundError, replaceJsonFile } from '@/lib/github'
+import type { NavigationData } from '@/types/navigation'
 
 export const runtime = 'edge'
 
 export async function POST() {
   try {
-    const session = await auth()
-    if (!session?.user?.accessToken) {
-      return new Response('Unauthorized', { status: 401 })
-    }
+    const admin = await requireAdmin()
+    if (!admin.ok) return admin.response
 
     // 检查默认数据文件是否存在
     try {
-      const defaultData = await getFileContent('src/navsphere/content/navigation-default.json')
+      const defaultData = await getFileContent<NavigationData>('src/navsphere/content/navigation-default.json')
 
       // 验证默认数据格式
       if (!defaultData || typeof defaultData !== 'object' || !defaultData.navigationItems) {
@@ -27,17 +26,16 @@ export async function POST() {
       }
 
       // 将默认数据写入到navigation.json
-      await commitFile(
+      await replaceJsonFile(
         'src/navsphere/content/navigation.json',
-        JSON.stringify(defaultData, null, 2),
+        defaultData,
         'Restore navigation data to default',
-        session.user.accessToken
       )
 
       return NextResponse.json(defaultData)
     } catch (fileError) {
       // 检查是否是文件不存在的错误
-      if ((fileError as Error).message.includes('404') || (fileError as Error).message.includes('not found')) {
+      if (fileError instanceof GitHubFileNotFoundError) {
         return NextResponse.json(
           {
             error: 'Default data file not found',

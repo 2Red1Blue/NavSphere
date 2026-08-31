@@ -1,5 +1,5 @@
-# 使用官方 Node.js 18 Alpine 镜像作为基础镜像
-FROM node:18-alpine AS base
+# 与 package.json engines 保持一致
+FROM node:20-alpine AS base
 
 # 安装依赖阶段
 FROM base AS deps
@@ -26,6 +26,8 @@ RUN corepack enable pnpm && pnpm run build
 # 运行阶段
 FROM base AS runner
 WORKDIR /app
+
+RUN apk add --no-cache curl
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
