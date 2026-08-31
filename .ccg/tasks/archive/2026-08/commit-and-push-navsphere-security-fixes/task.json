@@ -1,0 +1,12 @@
+{
+  "id": "commit-and-push-navsphere-security-fixes",
+  "title": "提交并推送 NavSphere 系统修复",
+  "status": "completed",
+  "complexity": "L+",
+  "risk": "high",
+  "domain": "devops",
+  "currentPhase": "completed",
+  "nextAction": "归档任务并推送 origin/main",
+  "createdAt": "2026-08-31T17:56:47Z",
+  "branch": "main"
+}
