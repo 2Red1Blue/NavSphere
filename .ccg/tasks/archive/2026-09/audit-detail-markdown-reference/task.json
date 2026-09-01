@@ -1,0 +1,12 @@
+{
+  "id": "audit-detail-markdown-reference",
+  "title": "评估 Station 参考方案并审查文章详情 Markdown 渲染",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "frontend",
+  "currentPhase": "completed",
+  "nextAction": "待用户确认后实施正文契约和 Markdown 规范化修复",
+  "createdAt": "2026-09-01T13:00:00Z",
+  "branch": "main"
+}
