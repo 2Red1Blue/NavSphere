@@ -1,98 +1,102 @@
 import Link from 'next/link'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
+
+import {
+  formatShanghaiTime,
+  getCategoryLabel,
+  getScoreTier,
+  inferSourceType,
+  toDisplayScore,
+} from '@/lib/feed-view'
+import { cn } from '@/lib/utils'
+import type { Article } from '@/types/feed'
 
 interface TimelineCardProps {
-  article: {
-    url_hash: string
-    title: string
-    source: string
-    score: number
-    summary?: string
-    takeaway?: string
-    discovered_at: string
-    featured?: number
-  }
+  article: Article
 }
 
-function getScoreColor(score: number): string {
-  if (score >= 75) return 'text-orange-600 dark:text-orange-400'
-  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400'
-  return 'text-gray-500 dark:text-gray-400'
-}
-
-function getScoreBg(score: number): string {
-  if (score >= 75) return 'bg-orange-100 dark:bg-orange-900/30'
-  if (score >= 50) return 'bg-yellow-100 dark:bg-yellow-900/30'
-  return 'bg-gray-100 dark:bg-gray-800'
-}
+const SCORE_STYLES = {
+  'must-read': 'border-primary/25 bg-primary/10 text-primary',
+  recommended: 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  notable: 'border-border bg-muted text-foreground',
+  standard: 'border-border bg-background text-muted-foreground',
+} as const
 
 export default function TimelineCard({ article }: TimelineCardProps) {
-  const time = new Date(article.discovered_at).toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const score = toDisplayScore(article.score)
+  const tier = getScoreTier(article.score)
+  const sourceType = inferSourceType(article.source, article.url)
+  const dateTime = article.discovered_at
 
   return (
-    <Link href={`/feed/${article.url_hash}`} className="group">
-      <div className="flex gap-4 py-6 px-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-        {/* 左侧时间线 */}
-        <div className="flex flex-col items-center">
-          <div className="text-xs text-gray-500 dark:text-gray-400 font-mono w-12 text-center">
-            {time}
-          </div>
-          <div className="mt-2 w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 ring-4 ring-blue-100 dark:ring-blue-900/30" />
-          <div className="flex-1 w-px bg-gray-200 dark:bg-gray-700 my-2" />
-        </div>
+    <article className="group relative grid grid-cols-[3.25rem_minmax(0,1fr)] gap-3 py-5 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-5 sm:py-6">
+      <div className="relative pt-1 text-center">
+        <time
+          dateTime={dateTime}
+          className="text-xs font-medium tabular-nums text-muted-foreground"
+          title="北京时间"
+        >
+          {formatShanghaiTime(dateTime)}
+        </time>
+        <span
+          aria-hidden="true"
+          className="absolute left-1/2 top-8 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-primary/70 ring-4 ring-background"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 left-1/2 top-10 -translate-x-1/2 border-l border-border group-last:hidden"
+        />
+      </div>
 
-        {/* 右侧卡片内容 */}
-        <div className="flex-1 min-w-0">
-          {/* 卡片头部 */}
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                {article.source}
+      <Link
+        href={`/feed/${article.url_hash}`}
+        className="min-w-0 rounded-md outline-none transition-colors duration-200 motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+        aria-label={`查看详情：${article.title}`}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground/80">{article.source || '来源待核验'}</span>
+            <span aria-hidden="true">·</span>
+            <span>{sourceType.label}</span>
+            {article.featured === 1 && (
+              <span className="inline-flex items-center gap-1 font-medium text-primary">
+                <Sparkles className="h-3 w-3" aria-hidden="true" />
+                精选
               </span>
-              {article.featured === 1 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                  ⭐ 精选
-                </span>
-              )}
-            </div>
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${getScoreBg(article.score)}`}>
-              <span className={`text-lg font-bold ${getScoreColor(article.score)}`}>
-                {article.score}
+            )}
+            <span className="ml-auto inline-flex items-baseline gap-1">
+              <span className={cn('rounded border px-2 py-0.5 font-semibold tabular-nums', SCORE_STYLES[tier.key])}>
+                {score}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">/ 100</span>
-            </div>
+              <span>/ 100 · {tier.label}</span>
+            </span>
           </div>
 
-          {/* 标题 */}
-          <h3 className="text-xl font-semibold mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+          <h3 className="text-lg font-semibold leading-snug tracking-tight transition-colors duration-200 group-hover:text-primary motion-reduce:transition-none sm:text-xl">
             {article.title}
+            <ArrowUpRight className="ml-1 inline h-4 w-4 -translate-y-px opacity-0 transition-opacity duration-200 group-hover:opacity-70 group-focus-within:opacity-70 motion-reduce:transition-none" aria-hidden="true" />
           </h3>
 
-          {/* 摘要 */}
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-3 line-clamp-3">
-            {article.summary}
-          </p>
-
-          {/* 推荐理由 (takeaway) */}
-          {article.takeaway && (
-            <>
-              <div className="border-t border-gray-200 dark:border-gray-700 my-3" />
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold mt-0.5">
-                    💡 推荐理由
-                  </span>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-2">
-                    {article.takeaway}
-                  </p>
-                </div>
-              </div>
-            </>
+          {article.summary && (
+            <p className="line-clamp-3 text-sm leading-6 text-muted-foreground sm:text-[0.9375rem]">
+              <span className="sr-only">AI 导读：</span>
+              {article.summary}
+            </p>
           )}
+
+          {article.takeaway && (
+            <div className="border-l-2 border-primary/40 pl-3 text-sm leading-6">
+              <span className="mr-2 font-semibold text-foreground">推荐理由</span>
+              <span className="text-muted-foreground">{article.takeaway}</span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="rounded bg-muted px-2 py-1">{getCategoryLabel(article.category)}</span>
+            {article.type && <span>{article.type}</span>}
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </article>
   )
 }

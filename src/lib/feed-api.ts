@@ -88,6 +88,22 @@ function validPublicUrl(value: unknown): value is string {
   }
 }
 
+function validExplicitTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  const match = /^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value)
+  if (!match || Number.isNaN(Date.parse(value))) return false
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const calendarDate = new Date(Date.UTC(year, month - 1, day))
+  return (
+    calendarDate.getUTCFullYear() === year &&
+    calendarDate.getUTCMonth() === month - 1 &&
+    calendarDate.getUTCDate() === day
+  )
+}
+
 export function validateFeedArticle(value: unknown): ValidationResult {
   if (!value || typeof value !== 'object') return { valid: false, error: 'article must be an object' }
   const article = value as Record<string, unknown>
@@ -119,11 +135,11 @@ export function validateFeedArticle(value: unknown): ValidationResult {
     return { valid: false, error: 'score fields must be integers within their allowed range' }
   }
 
-  if (typeof article.discovered_at !== 'string' || Number.isNaN(Date.parse(article.discovered_at))) {
-    return { valid: false, error: 'discovered_at must be an ISO date' }
+  if (!validExplicitTimestamp(article.discovered_at)) {
+    return { valid: false, error: 'discovered_at must be an ISO date with an explicit timezone' }
   }
-  if (typeof article.published_at !== 'string' || Number.isNaN(Date.parse(article.published_at))) {
-    return { valid: false, error: 'published_at must be an ISO date' }
+  if (!validExplicitTimestamp(article.published_at)) {
+    return { valid: false, error: 'published_at must be an ISO date with an explicit timezone' }
   }
 
   const potential = article.content_potential

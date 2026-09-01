@@ -1,7 +1,22 @@
 'use client'
 
-import { Star, List, TrendingUp, Tags, FileText, BookOpen, Lightbulb, Newspaper, Wrench } from 'lucide-react'
+import Link from 'next/link'
+import {
+  BookOpen,
+  CalendarDays,
+  FileText,
+  Flame,
+  Hash,
+  Home,
+  Lightbulb,
+  List,
+  Newspaper,
+  Sparkles,
+  Wrench,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+
+import { getCategoryLabel } from '@/lib/feed-view'
 
 interface SidebarNavProps {
   categories?: { name: string; count: number }[]
@@ -12,26 +27,26 @@ interface SidebarNavProps {
   onTypeChange?: (type: string) => void
 }
 
-// 领域中文映射
-const CATEGORY_DISPLAY: Record<string, string> = {
-  'ai-engineering': 'AI 工程',
-  'ai-safety': 'AI 安全',
-  'cognitive-science': '认知科学',
-  'decision-method': '决策方法',
-  'health-science': '健康科学',
-  'social-observation': '社会观察',
-  'tech-industry': '技术产业',
-  'general': '综合',
+const TYPE_CONFIG: Record<string, { icon: LucideIcon; label: string }> = {
+  paper: { icon: FileText, label: '论文' },
+  tutorial: { icon: BookOpen, label: '教程' },
+  deep: { icon: Lightbulb, label: '深度' },
+  news: { icon: Newspaper, label: '新闻' },
+  tool: { icon: Wrench, label: '工具' },
 }
 
-// 类型图标和中文映射
-const TYPE_CONFIG: Record<string, { icon: LucideIcon; label: string }> = {
-  'paper': { icon: FileText, label: '论文' },
-  'tutorial': { icon: BookOpen, label: '教程' },
-  'deep': { icon: Lightbulb, label: '深度' },
-  'news': { icon: Newspaper, label: '新闻' },
-  'tool': { icon: Wrench, label: '工具' },
-}
+const NAV_ITEMS = [
+  { href: '/feed?featured=true', icon: Sparkles, label: '精选' },
+  { href: '/feed', icon: List, label: '全部 AI 动态' },
+  { href: '/feed/hot', icon: Flame, label: '热点榜' },
+  { href: '/feed/daily', icon: CalendarDays, label: 'AI 日报' },
+  { href: '/feed#topics', icon: Hash, label: '主题' },
+] as const
+
+const filterClass = (selected: boolean) =>
+  `w-full flex items-center justify-between rounded-md px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none ${
+    selected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+  }`
 
 export default function SidebarNav({
   categories = [],
@@ -41,110 +56,84 @@ export default function SidebarNav({
   onCategoryChange,
   onTypeChange,
 }: SidebarNavProps) {
-  const navItems = [
-    { href: '/feed', icon: List, label: '全部' },
-    { href: '/feed?featured=true', icon: Star, label: '精选' },
-    { href: '/feed/hot', icon: TrendingUp, label: '热点榜' },
-  ]
-
   return (
-    <aside className="w-64 flex-shrink-0 hidden lg:block">
-      <nav className="sticky top-20 space-y-6">
-        {/* 主导航 */}
-        <div className="space-y-1">
-          {navItems.map((item) => (
-            <a
+    <aside className="hidden w-64 flex-shrink-0 bg-background lg:block [.fixed_&]:block" aria-label="Feed 导航与筛选">
+      <nav className="sticky top-20 space-y-7 p-4 lg:p-0">
+        <div className="space-y-1" aria-label="内容导航">
+          {NAV_ITEMS.map((item) => (
+            <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-accent transition-colors"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
             >
-              <item.icon className="w-4 h-4" />
+              <item.icon className="h-4 w-4" aria-hidden="true" />
               <span>{item.label}</span>
-            </a>
+            </Link>
           ))}
+          <Link
+            href="/"
+            className="mt-3 flex items-center gap-3 border-t border-border px-3 pt-4 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+          >
+            <Home className="h-4 w-4" aria-hidden="true" />
+            <span>返回导航站</span>
+          </Link>
         </div>
 
-        {/* 领域筛选 */}
         {categories.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <section aria-labelledby="category-filter-heading" className="space-y-2">
+            <h2 id="category-filter-heading" className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               领域
-            </h3>
+            </h2>
             <div className="space-y-1">
-              <button
-                onClick={() => onCategoryChange?.('all')}
-                className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  selectedCategory === 'all'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-accent'
-                }`}
-              >
-                <span>全部</span>
-                <span className="text-xs opacity-70">
-                  {categories.reduce((sum, c) => sum + c.count, 0)}
-                </span>
+              <button type="button" onClick={() => onCategoryChange?.('all')} className={filterClass(selectedCategory === 'all')}>
+                <span>全部领域</span>
+                <span className="text-xs tabular-nums opacity-70">{categories.reduce((sum, item) => sum + item.count, 0)}</span>
               </button>
-              {categories.map((cat) => (
+              {categories.map((category) => (
                 <button
-                  key={cat.name}
-                  onClick={() => onCategoryChange?.(cat.name)}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    selectedCategory === cat.name
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-accent'
-                  }`}
+                  type="button"
+                  key={category.name}
+                  onClick={() => onCategoryChange?.(category.name)}
+                  className={filterClass(selectedCategory === category.name)}
                 >
-                  <span>{CATEGORY_DISPLAY[cat.name] || cat.name}</span>
-                  <span className="text-xs opacity-70">{cat.count}</span>
+                  <span>{getCategoryLabel(category.name)}</span>
+                  <span className="text-xs tabular-nums opacity-70">{category.count}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* 类型筛选 */}
         {types.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              类型
-            </h3>
+          <section id="topics" aria-labelledby="type-filter-heading" className="scroll-mt-24 space-y-2">
+            <h2 id="type-filter-heading" className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              主题类型
+            </h2>
             <div className="space-y-1">
-              <button
-                onClick={() => onTypeChange?.('all')}
-                className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                  selectedType === 'all'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-accent'
-                }`}
-              >
-                <span>全部</span>
-                <span className="text-xs opacity-70">
-                  {types.reduce((sum, t) => sum + t.count, 0)}
-                </span>
+              <button type="button" onClick={() => onTypeChange?.('all')} className={filterClass(selectedType === 'all')}>
+                <span>全部类型</span>
+                <span className="text-xs tabular-nums opacity-70">{types.reduce((sum, item) => sum + item.count, 0)}</span>
               </button>
               {types.map((type) => {
-                const config = TYPE_CONFIG[type.name] || { icon: FileText, label: type.name }
+                const config = TYPE_CONFIG[type.name] ?? { icon: FileText, label: type.name }
                 const Icon = config.icon
                 return (
                   <button
+                    type="button"
                     key={type.name}
                     onClick={() => onTypeChange?.(type.name)}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                      selectedType === type.name
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-accent'
-                    }`}
+                    className={filterClass(selectedType === type.name)}
                   >
                     <span className="flex items-center gap-2">
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>{config.label}</span>
                     </span>
-                    <span className="text-xs opacity-70">{type.count}</span>
+                    <span className="text-xs tabular-nums opacity-70">{type.count}</span>
                   </button>
                 )
               })}
             </div>
-          </div>
+          </section>
         )}
       </nav>
     </aside>

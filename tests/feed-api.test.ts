@@ -41,6 +41,29 @@ test('feed ingestion rejects non-http source URLs', () => {
   assert.equal(result.valid, false)
 })
 
+test('feed ingestion requires timestamps with an explicit timezone', () => {
+  for (const timestamp of [
+    '2026-08-31T00:00:00',
+    '2026-08-31 00:00:00',
+    '2026-02-31T00:00:00Z',
+  ]) {
+    assert.equal(validateFeedArticle({ ...approvedArticle, discovered_at: timestamp }).valid, false)
+    assert.equal(validateFeedArticle({ ...approvedArticle, published_at: timestamp }).valid, false)
+  }
+  assert.equal(validateFeedArticle({
+    ...approvedArticle,
+    discovered_at: '2026-08-31T08:00:00+08:00',
+  }).valid, true)
+})
+
+test('health endpoint checks D1 and fails degraded with 503', () => {
+  const source = readFileSync(new URL('../src/app/api/health/route.ts', import.meta.url), 'utf8')
+  assert.match(source, /env\.DB\.prepare/)
+  assert.match(source, /approved_for_publication\s*=\s*1/)
+  assert.match(source, /status:\s*'degraded'/)
+  assert.match(source, /status:\s*503/)
+})
+
 test('feed list projection never includes article content or approval internals', () => {
   assert.equal(FEED_LIST_COLUMNS.includes('content' as never), false)
   assert.equal(FEED_LIST_COLUMNS.includes('approved_for_publication' as never), false)

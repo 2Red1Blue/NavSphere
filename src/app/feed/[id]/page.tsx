@@ -13,12 +13,20 @@ import { Button } from '@/registry/new-york/ui/button'
 import { Badge } from '@/registry/new-york/ui/badge'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
 import { FeedError } from '@/components/feed/feed-error'
+import {
+  getCategoryLabel,
+  getScoreTier,
+  inferSourceType,
+  SHANGHAI_TIME_ZONE,
+  toDisplayScore,
+} from '@/lib/feed-view'
 import type { Article } from '@/types/feed'
 import { cn } from '@/lib/utils'
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleDateString('zh-CN', {
+    timeZone: SHANGHAI_TIME_ZONE,
     year: 'numeric', month: 'long', day: 'numeric',
   })
 }
@@ -39,7 +47,7 @@ function ScoreBar({ icon: Icon, label, value, max, color }: {
       </div>
       <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all duration-700', color.replace('text-', 'bg-'))}
+          className={cn('h-full rounded-full transition-all duration-700 motion-reduce:transition-none', color.replace('text-', 'bg-'))}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -57,18 +65,6 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   deep: { label: '深度', icon: '🔍' },
   news: { label: '新闻', icon: '📰' },
   tool: { label: '工具', icon: '🔧' },
-}
-
-// 领域中文映射
-const DOMAIN_LABELS: Record<string, string> = {
-  'ai-engineering': 'AI 工程',
-  'ai-safety': 'AI 安全',
-  'cognitive-science': '认知科学',
-  'decision-method': '决策方法',
-  'health-science': '健康科学',
-  'social-observation': '社会观察',
-  'tech-industry': '技术产业',
-  'general': '综合',
 }
 
 /**
@@ -366,7 +362,10 @@ export default function FeedDetailPage() {
   }
 
   const typeInfo = article.type ? TYPE_LABELS[article.type] : null
-  const domainLabel = DOMAIN_LABELS[article.category] || article.category
+  const domainLabel = getCategoryLabel(article.category)
+  const displayScore = toDisplayScore(article.score)
+  const scoreTier = getScoreTier(article.score)
+  const sourceType = inferSourceType(article.source, article.url)
   const cleanedContent = article.content ? cleanContent(article.content) : null
   const headings = cleanedContent ? extractHeadings(cleanedContent) : []
 
@@ -411,9 +410,9 @@ export default function FeedDetailPage() {
         {/* Back */}
         <Link
           href="/feed"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group"
+          className="group mb-8 inline-flex items-center gap-2 rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 motion-reduce:transition-none"
         >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none" />
           返回 Feed
         </Link>
 
@@ -425,15 +424,15 @@ export default function FeedDetailPage() {
               <div
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-bold',
-                  article.score >= 27
-                    ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800'
-                    : article.score >= 24
-                    ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800'
-                    : 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800'
+                  scoreTier.key === 'must-read'
+                    ? 'border-primary/25 bg-primary/10 text-primary'
+                    : scoreTier.key === 'recommended'
+                    ? 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                    : 'border-border bg-muted text-foreground'
                 )}
               >
                 <Star className="h-4 w-4 fill-current" />
-                {article.score}/30
+                {displayScore}/100 · {scoreTier.label}
               </div>
 
               {typeInfo && (
@@ -443,9 +442,7 @@ export default function FeedDetailPage() {
                 </Badge>
               )}
 
-              {article.category && article.category !== 'general' && (
-                <Badge variant="secondary" className="text-xs">{domainLabel}</Badge>
-              )}
+              <Badge variant="secondary" className="text-xs">{domainLabel}</Badge>
 
               {article.content_potential && (
                 <Badge
@@ -471,6 +468,8 @@ export default function FeedDetailPage() {
 
             <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
               <span className="font-medium text-foreground/70">{article.source}</span>
+              <span aria-hidden="true">·</span>
+              <span>{sourceType.label}</span>
               {article.published_at && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -480,12 +479,12 @@ export default function FeedDetailPage() {
             </div>
           </header>
 
-          {/* Summary */}
+          {/* AI guide */}
           {article.summary && (
             <section className="mb-6">
               <h2 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 <Sparkles className="h-3.5 w-3.5" />
-                摘要
+                AI 导读
               </h2>
               <div className="text-sm leading-relaxed text-foreground/85 space-y-2">
                 {article.summary.split('\n').map((line, i) => (
@@ -495,12 +494,12 @@ export default function FeedDetailPage() {
             </section>
           )}
 
-          {/* Takeaway */}
+          {/* Recommendation reason */}
           {article.takeaway && (
             <section className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/10">
               <h2 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 <Lightbulb className="h-3.5 w-3.5" />
-                核心收获
+                推荐理由
               </h2>
               <p className="text-sm font-medium leading-relaxed">{article.takeaway}</p>
             </section>
