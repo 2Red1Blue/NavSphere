@@ -24,6 +24,7 @@
     "cf:build": "next-on-pages",
     "cf:migrations:list": "wrangler d1 migrations list content-os-feed --remote",
     "cf:migrate": "wrangler d1 migrations apply content-os-feed --remote",
+    "cf:production-gate": "tsx scripts/production-gate.ts",
     "cf:deploy": "pnpm run cf:build && wrangler pages deploy .vercel/output/static --project-name navsphere"
   },
   "dependencies": {
