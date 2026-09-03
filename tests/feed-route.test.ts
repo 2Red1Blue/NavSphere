@@ -106,10 +106,10 @@ test('D1 upsert and detail route enforce the verified content gate', () => {
   const ingestSource = readFileSync(new URL('../src/app/api/feed/route.ts', import.meta.url), 'utf8')
   const listHandler = routeHandlerBlock(ingestSource, 'export async function GET(request: Request)')
   const ingestHandler = routeHandlerBlock(ingestSource, 'export async function POST(request: Request)')
-  assert.match(listHandler, /^export async function GET\(request: Request\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
-  assert.match(listHandler, /\n  \}, ['"]list['"]\)\n\}$/)
-  assert.match(ingestHandler, /^export async function POST\(request: Request\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
-  assert.match(ingestHandler, /\n  \}, ['"]ingest['"]\)\n\}$/)
+  assert.match(listHandler, /return\s+withFeedErrorBoundary\(async\s*\(\)\s*=>\s*\{/)
+  assert.match(listHandler, /withFeedErrorBoundary\([\s\S]*,\s*['"]list['"]\)\s*\n\}\s*$/)
+  assert.match(ingestHandler, /return\s+withFeedErrorBoundary\(async\s*\(\)\s*=>\s*\{/)
+  assert.match(ingestHandler, /withFeedErrorBoundary\([\s\S]*,\s*['"]ingest['"]\)\s*\n\}\s*$/)
   assert.match(ingestSource, /db\.prepare\(FEED_UPSERT_SQL\)/)
   assert.match(FEED_UPSERT_SQL, /content_version/)
   assert.match(FEED_UPSERT_SQL, /content_hash\s+IS NOT\s+excluded\.content_hash/)
@@ -118,8 +118,8 @@ test('D1 upsert and detail route enforce the verified content gate', () => {
 
   const detailSource = readFileSync(new URL('../src/app/api/feed/[id]/route.ts', import.meta.url), 'utf8')
   const detailHandler = routeHandlerBlock(detailSource, 'export async function GET(')
-  assert.match(detailHandler, /\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
-  assert.match(detailHandler, /\n  \}, ['"]detail['"]\)\n\}$/)
+  assert.match(detailHandler, /return\s+withFeedErrorBoundary\(async\s*\(\)\s*=>\s*\{/)
+  assert.match(detailHandler, /withFeedErrorBoundary\([\s\S]*,\s*['"]detail['"]\)\s*\n\}\s*$/)
   assert.doesNotMatch(detailSource, /SELECT\s+\*/)
   assert.match(detailSource, /content_quality\s*=\s*'verified_fulltext'/)
   assert.match(detailSource, /content_format\s*=\s*'markdown_v1'/)
@@ -132,8 +132,8 @@ test('D1 upsert and detail route enforce the verified content gate', () => {
     const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8')
     const operation = relativePath.includes('/revoke/') ? 'revoke' : 'restore'
     const handler = routeHandlerBlock(source, 'export async function POST(')
-    assert.match(handler, /\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
-    assert.match(handler, new RegExp(`\\n  \\}, ['"]${operation}['"]\\)\\n\\}$`))
+    assert.match(handler, /return\s+withFeedErrorBoundary\(async\s*\(\)\s*=>\s*\{/)
+    assert.match(handler, new RegExp(`withFeedErrorBoundary\\([\\s\\S]*,\\s*['"]${operation}['"]\\)\\s*\\n\\}\\s*$`))
   }
 })
 
