@@ -1,6 +1,5 @@
 'use client'
 
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
 
 export function FeedSkeleton({ count = 5 }: { count?: number }) {

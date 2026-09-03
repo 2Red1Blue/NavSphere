@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Star, ExternalLink } from 'lucide-react'
-import { Badge } from '@/registry/new-york/ui/badge'
+import { Star } from 'lucide-react'
 import type { Article } from '@/types/feed'
 
 interface FeedCardProps {

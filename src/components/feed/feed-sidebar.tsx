@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/registry/new-york/ui/button'
 import { ScrollArea } from '@/registry/new-york/ui/scroll-area'
-import { Newspaper, ChevronRight, Star } from 'lucide-react'
+import { Newspaper, Star } from 'lucide-react'
 
 interface FeedSidebarProps {
   categories: { name: string; count: number }[]
