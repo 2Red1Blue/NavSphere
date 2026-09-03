@@ -5,8 +5,10 @@ import test from 'node:test'
 
 import {
   FEED_LIST_COLUMNS,
+  FEED_RETRY_AFTER_SECONDS,
   secureTokenEquals,
   validateFeedArticle,
+  withFeedErrorBoundary,
 } from '../src/lib/feed-api'
 import {
   createHealthResponse,
@@ -207,6 +209,39 @@ test('health schema query executes against the local SQLite schema', () => {
 test('feed list projection never includes article content or approval internals', () => {
   assert.equal(FEED_LIST_COLUMNS.includes('content' as never), false)
   assert.equal(FEED_LIST_COLUMNS.includes('approved_for_publication' as never), false)
+})
+
+test('feed error boundary converts unexpected failures to a finite retryable response', async () => {
+  const originalConsoleError = console.error
+  console.error = () => undefined
+  try {
+    const response = await withFeedErrorBoundary(async () => {
+      throw new Error('no such column: content_quality')
+    }, 'detail')
+
+    assert.equal(response.status, 503)
+    assert.equal(response.headers.get('Cache-Control'), 'no-store')
+    assert.equal(response.headers.get('Retry-After'), String(FEED_RETRY_AFTER_SECONDS))
+    const body = await response.json() as { error: { code: string; message: string } }
+    assert.deepEqual(body, {
+      error: {
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Feed service is temporarily unavailable',
+      },
+    })
+    assert.doesNotMatch(JSON.stringify(body), /content_quality|no such column/i)
+  } finally {
+    console.error = originalConsoleError
+  }
+})
+
+test('feed error boundary passes through normal responses unchanged', async () => {
+  const expected = new Response('unauthorized', { status: 401 })
+  const response = await withFeedErrorBoundary(() => expected, 'list')
+  assert.equal(response, expected)
+  assert.equal(response.status, 401)
+  assert.equal(response.headers.get('Retry-After'), null)
+  assert.equal(await response.text(), 'unauthorized')
 })
 
 test('feed ingestion preserves existing article content during an upsert', () => {

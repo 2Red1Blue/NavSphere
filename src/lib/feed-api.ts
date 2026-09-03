@@ -7,6 +7,36 @@ export const MAX_CONTENT_CHARS = 200_000
 export const MAX_FEED_REQUEST_BYTES = 1024 * 1024
 export const MAX_FEED_BATCH_SIZE = 50
 export const MAX_CONTENT_BATCH_SIZE = 10
+export const FEED_RETRY_AFTER_SECONDS = 300
+
+/**
+ * Convert unexpected D1/schema failures into a retryable, non-cacheable response.
+ * Route handlers pass a constant operation label so server logs stay actionable
+ * without exposing driver errors, SQL, or schema details to public callers.
+ */
+export async function withFeedErrorBoundary(
+  handler: () => Response | Promise<Response>,
+  operation: string,
+): Promise<Response> {
+  try {
+    return await handler()
+  } catch (error) {
+    console.error(`NavSphere Feed ${operation} failed`, error)
+    return new Response(JSON.stringify({
+      error: {
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Feed service is temporarily unavailable',
+      },
+    }), {
+      status: 503,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Retry-After': String(FEED_RETRY_AFTER_SECONDS),
+      },
+    })
+  }
+}
 
 export const FEED_LIST_COLUMNS = [
   'url_hash',

@@ -32,6 +32,14 @@ function requestFor(payload: unknown, headers: Record<string, string> = {}) {
   })
 }
 
+function routeHandlerBlock(source: string, signature: string): string {
+  const start = source.indexOf(signature)
+  assert.notEqual(start, -1, `missing route handler: ${signature}`)
+  const end = source.indexOf('\n}\n', start)
+  assert.notEqual(end, -1, `unterminated route handler: ${signature}`)
+  return source.slice(start, end + 2)
+}
+
 test('feed request rejects oversized Content-Length before parsing JSON', async () => {
   const request = requestFor({}, { 'Content-Length': String(MAX_FEED_REQUEST_BYTES + 1) })
   const result = await validateFeedRequest(request)
@@ -96,6 +104,12 @@ test('feed request caps content-bearing batches at ten and preserves metadata ba
 
 test('D1 upsert and detail route enforce the verified content gate', () => {
   const ingestSource = readFileSync(new URL('../src/app/api/feed/route.ts', import.meta.url), 'utf8')
+  const listHandler = routeHandlerBlock(ingestSource, 'export async function GET(request: Request)')
+  const ingestHandler = routeHandlerBlock(ingestSource, 'export async function POST(request: Request)')
+  assert.match(listHandler, /^export async function GET\(request: Request\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
+  assert.match(listHandler, /\n  \}, ['"]list['"]\)\n\}$/)
+  assert.match(ingestHandler, /^export async function POST\(request: Request\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
+  assert.match(ingestHandler, /\n  \}, ['"]ingest['"]\)\n\}$/)
   assert.match(ingestSource, /db\.prepare\(FEED_UPSERT_SQL\)/)
   assert.match(FEED_UPSERT_SQL, /content_version/)
   assert.match(FEED_UPSERT_SQL, /content_hash\s+IS NOT\s+excluded\.content_hash/)
@@ -103,10 +117,24 @@ test('D1 upsert and detail route enforce the verified content gate', () => {
   assert.match(FEED_UPSERT_SQL, /julianday\(excluded\.content_extracted_at\)/)
 
   const detailSource = readFileSync(new URL('../src/app/api/feed/[id]/route.ts', import.meta.url), 'utf8')
+  const detailHandler = routeHandlerBlock(detailSource, 'export async function GET(')
+  assert.match(detailHandler, /\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
+  assert.match(detailHandler, /\n  \}, ['"]detail['"]\)\n\}$/)
   assert.doesNotMatch(detailSource, /SELECT\s+\*/)
   assert.match(detailSource, /content_quality\s*=\s*'verified_fulltext'/)
   assert.match(detailSource, /content_format\s*=\s*'markdown_v1'/)
   assert.match(detailSource, /fulltext_publication_allowed\s*=\s*1/)
+
+  for (const relativePath of [
+    '../src/app/api/feed/[id]/revoke/route.ts',
+    '../src/app/api/feed/[id]/restore/route.ts',
+  ]) {
+    const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8')
+    const operation = relativePath.includes('/revoke/') ? 'revoke' : 'restore'
+    const handler = routeHandlerBlock(source, 'export async function POST(')
+    assert.match(handler, /\) \{\n  return withFeedErrorBoundary\(async \(\) => \{/)
+    assert.match(handler, new RegExp(`\\n  \\}, ['"]${operation}['"]\\)\\n\\}$`))
+  }
 })
 
 test('canonical D1 upsert executes idempotent and quality-aware content transitions', () => {

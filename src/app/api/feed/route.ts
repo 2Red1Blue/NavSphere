@@ -8,6 +8,7 @@ import {
   FEED_LIST_COLUMNS,
   secureTokenEquals,
   validateFeedRequest,
+  withFeedErrorBoundary,
 } from '@/lib/feed-api'
 
 export const runtime = 'edge'
@@ -164,11 +165,15 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
 }
 
 export async function GET(request: Request) {
-  const { env } = getRequestContext()
-  return handleList(request, env.DB)
+  return withFeedErrorBoundary(async () => {
+    const { env } = getRequestContext()
+    return handleList(request, env.DB)
+  }, 'list')
 }
 
 export async function POST(request: Request) {
-  const { env } = getRequestContext()
-  return handleIngest(request, env.DB, env.CONTENT_OS_API_KEY)
+  return withFeedErrorBoundary(async () => {
+    const { env } = getRequestContext()
+    return handleIngest(request, env.DB, env.CONTENT_OS_API_KEY)
+  }, 'ingest')
 }
