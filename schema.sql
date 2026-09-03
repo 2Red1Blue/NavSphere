@@ -9,7 +9,19 @@ CREATE TABLE IF NOT EXISTS articles (
   original_title    TEXT,
   summary           TEXT,
   takeaway          TEXT,
-  content           TEXT,                      -- Full article content (markdown)
+  content           TEXT,                      -- Verified Markdown or retained legacy body
+  content_format    TEXT CHECK(content_format = 'markdown_v1' OR content_format IS NULL),
+  content_quality   TEXT NOT NULL DEFAULT 'summary_only'
+                    CHECK(content_quality IN ('verified_fulltext', 'summary_only', 'legacy_unverified')),
+  content_hash      TEXT,
+  content_chars     INTEGER NOT NULL DEFAULT 0 CHECK(content_chars >= 0),
+  content_quality_score INTEGER NOT NULL DEFAULT 0 CHECK(content_quality_score BETWEEN 0 AND 100),
+  content_version   INTEGER NOT NULL DEFAULT 0 CHECK(content_version >= 0),
+  content_extracted_at TEXT,
+  content_source    TEXT,
+  fulltext_publication_allowed INTEGER NOT NULL DEFAULT 0
+                    CHECK(fulltext_publication_allowed IN (0, 1)),
+  fulltext_revoked_at TEXT,
   source            TEXT NOT NULL,
   url               TEXT NOT NULL,
   category          TEXT NOT NULL DEFAULT 'general',
@@ -38,13 +50,13 @@ CREATE INDEX IF NOT EXISTS idx_articles_topic ON articles(topic);
 CREATE INDEX IF NOT EXISTS idx_articles_type ON articles(type);
 CREATE INDEX IF NOT EXISTS idx_articles_public_date ON articles(approved_for_publication, discovered_at DESC);
 
--- The snapshot is schema version 5. Historical migrations are only for
+-- The snapshot is schema version 7. Historical migrations are only for
 -- upgrading a legacy database; do not apply them after loading schema.sql.
 CREATE TABLE IF NOT EXISTS schema_migrations (
   version     INTEGER PRIMARY KEY,
   applied_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT OR IGNORE INTO schema_migrations(version) VALUES (1), (2), (3), (4), (5);
+INSERT OR IGNORE INTO schema_migrations(version) VALUES (1), (2), (3), (4), (5), (6), (7);
 
 -- Persistent, privacy-preserving anonymous submission rate counters.
 CREATE TABLE IF NOT EXISTS submission_rate_limits (

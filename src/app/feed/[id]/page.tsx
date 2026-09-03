@@ -2,7 +2,7 @@
 
 export const runtime = 'edge'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
@@ -20,6 +20,12 @@ import {
   SHANGHAI_TIME_ZONE,
   toDisplayScore,
 } from '@/lib/feed-view'
+import {
+  canRenderFullContent,
+  extractMarkdownHeadings,
+  normalizeReaderMarkdown,
+} from '@/lib/reader-markdown'
+import type { ReaderHeading } from '@/lib/reader-markdown'
 import type { Article } from '@/types/feed'
 import { cn } from '@/lib/utils'
 
@@ -67,174 +73,188 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   tool: { label: '工具', icon: '🔧' },
 }
 
-/**
- * 过滤掉 YAML frontmatter 和元数据行
- */
-function cleanContent(raw: string): string {
-  let s = raw
-  // 1. 移除 YAML frontmatter (--- ... ---)
-  const fmMatch = s.match(/^---\n[\s\S]*?\n---\n?/)
-  if (fmMatch) {
-    s = s.slice(fmMatch[0].length)
+function SafeMarkdownImage({ src, alt, className }: {
+  src?: string
+  alt?: string
+  className?: string
+}) {
+  const [consented, setConsented] = useState(false)
+  const safeSource = src && /^https?:\/\//i.test(src) ? src : null
+  let host = '外部站点'
+  if (safeSource) {
+    try {
+      host = new URL(safeSource).hostname
+    } catch {
+      // Keep the generic label and fail closed below.
+    }
   }
-  // 2. 移除 Markdown 加粗格式的元数据行
-  s = s.replace(/^\*\*(Source|Author|Published|URL):\*\*\s*.+\n?/gm, '')
-  // 3. 移除纯文本元数据行
-  s = s.replace(/^Source:\s*.+(?:Author:\s*.+)?(?:Published:\s*.+)?(?:URL:\s*.+)?\n?/gm, '')
-  s = s.replace(/^(Source|Author|Published|URL):\s*.+\n?/gm, '')
-  // 4. 移除元数据后面的分隔线
-  s = s.replace(/^---\n+/m, '')
-  // 5. 移除开头的 # 标题行（已在页面 header 展示）
-  s = s.replace(/^#\s+.+\n+/, '')
-  // 6. 移除开头的连续空行
-  s = s.replace(/^\n+/, '')
 
-  // 7. 先把缩进代码块转换为 fenced 代码块（避免被段落分隔打散）
-  s = convertIndentedCodeBlocks(s)
-  // 8. 修复段落分隔：连续两段纯文本行之间只有单 \n 的情况
-  s = fixParagraphSpacing(s)
+  if (!safeSource) {
+    return alt ? (
+      <span className="my-6 block rounded-sm border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
+        图片：{alt}
+      </span>
+    ) : null
+  }
 
-  return s.trim()
+  if (!consented) {
+    return (
+      <figure className={cn('my-8 rounded-sm border border-border/70 bg-muted/30 p-4', className)}>
+        <figcaption className="text-sm font-medium text-foreground">
+          {alt || '文章配图'}
+        </figcaption>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          为保护阅读隐私，本站不会自动连接 {host} 加载远程图片。
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3 text-sm">
+          <button
+            type="button"
+            className="rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 outline-none hover:decoration-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            onClick={() => setConsented(true)}
+          >
+            加载原图
+          </button>
+          <a
+            href={safeSource}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-sm text-muted-foreground underline underline-offset-4 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            新窗口查看
+          </a>
+        </div>
+      </figure>
+    )
+  }
+
+  return (
+    // Source images are remote and intentionally load only after user consent.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={safeSource}
+      alt={alt ?? ''}
+      className={cn('my-8 h-auto max-w-full rounded-sm border border-border/60', className)}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+    />
+  )
 }
 
-/**
- * 将缩进代码块（4空格/tab 缩进）转换为 fenced 代码块（```）
- * 避免后续段落分隔逻辑打散代码块
- */
-function convertIndentedCodeBlocks(text: string): string {
-  const lines = text.split('\n')
-  const result: string[] = []
-  let i = 0
-  let inFencedBlock = false
-
-  while (i < lines.length) {
-    const line = lines[i]
-
-    // 追踪已有 fenced 代码块
-    if (line.trimStart().startsWith('```')) {
-      inFencedBlock = !inFencedBlock
-      result.push(line)
-      i++
-      continue
-    }
-    if (inFencedBlock) {
-      result.push(line)
-      i++
-      continue
-    }
-
-    // 检测缩进代码块：连续 >=2 行的 4空格/tab 缩进行
-    // （单行缩进可能是列表或引用，不当作代码块）
-    if (/^(    |\t)/.test(line) && line.trim() !== '') {
-      const codeLines: string[] = [line]
-      let j = i + 1
-      while (j < lines.length) {
-        const nextLine = lines[j]
-        // 继续收集：缩进行或空行（代码块内允许空行）
-        if (/^(    |\t)/.test(nextLine) || nextLine.trim() === '') {
-          codeLines.push(nextLine)
-          j++
-        } else {
-          break
-        }
-      }
-      // 至少2行才算代码块（排除列表续行等情况）
-      const nonEmptyCodeLines = codeLines.filter(l => l.trim() !== '')
-      if (nonEmptyCodeLines.length >= 2) {
-        // 移除尾部空行
-        while (codeLines.length > 0 && codeLines[codeLines.length - 1].trim() === '') {
-          codeLines.pop()
-        }
-        // 去除公共缩进（最少4空格）
-        const stripped = codeLines.map(l => l.replace(/^( {4}|\t)/, ''))
-        result.push('```')
-        result.push(...stripped)
-        result.push('```')
-        i = j
-        continue
-      }
-    }
-
-    result.push(line)
-    i++
+function createMarkdownComponents(headings: ReaderHeading[]): Components {
+  const headingIds = new Map(
+    headings
+      .filter((heading) => heading.sourceOffset !== undefined)
+      .map((heading) => [heading.sourceOffset as number, heading.id]),
+  )
+  const headingClassName = 'scroll-mt-24 text-balance font-semibold tracking-tight text-foreground'
+  const idForNode = (node: unknown) => {
+    if (!node || typeof node !== 'object' || !('position' in node)) return undefined
+    const position = (node as { position?: { start?: { offset?: number } } }).position
+    const offset = position?.start?.offset
+    return offset === undefined ? undefined : headingIds.get(offset)
   }
 
-  return result.join('\n')
-}
-
-/**
- * 智能段落分隔：扫描文本行，对连续的非结构性文本行补充空行
- */
-function fixParagraphSpacing(text: string): string {
-  const lines = text.split('\n')
-  const result: string[] = []
-  let inCodeBlock = false
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const next = lines[i + 1]
-
-    // 追踪代码块状态
-    if (line.startsWith('```')) {
-      inCodeBlock = !inCodeBlock
-    }
-
-    result.push(line)
-
-    if (inCodeBlock || !next) continue
-
-    // 判断当前行是否是"结构性"行（不需要在其后加空行）
-    const isStructural = (l: string) =>
-      l === '' ||
-      l.startsWith('#') ||
-      l.startsWith('- ') ||
-      l.startsWith('* ') ||
-      l.startsWith('> ') ||
-      l.startsWith('```') ||
-      l.startsWith('|') ||
-      /^(    |\t)/.test(l) ||  // 缩进行（代码块或列表）
-      /^\d+\.\s/.test(l) ||
-      /^\s+$/.test(l)
-
-    const currIsStructural = isStructural(line)
-    const nextIsStructural = isStructural(next)
-
-    // 只在两个非空、非结构性行之间补充空行
-    if (!currIsStructural && !nextIsStructural && line.trim() !== '' && next.trim() !== '') {
-      result.push('')
-    }
+  /* react-markdown supplies an AST node that must not be forwarded to the DOM. */
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  return {
+    h1: ({ node: _node, className, ...props }) => (
+      <h1 className={cn(headingClassName, 'mt-12 text-3xl leading-tight', className)} {...props} />
+    ),
+    h2: ({ node, children, className, ...props }) => (
+      <h2
+        id={idForNode(node)}
+        className={cn(headingClassName, 'mb-4 mt-14 border-t border-border/70 pt-8 text-2xl leading-snug', className)}
+        {...props}
+      >
+        {children}
+      </h2>
+    ),
+    h3: ({ node, children, className, ...props }) => (
+      <h3
+        id={idForNode(node)}
+        className={cn(headingClassName, 'mb-3 mt-10 text-xl leading-snug', className)}
+        {...props}
+      >
+        {children}
+      </h3>
+    ),
+    h4: ({ node, children, className, ...props }) => (
+      <h4
+        id={idForNode(node)}
+        className={cn(headingClassName, 'mb-3 mt-8 text-lg leading-snug', className)}
+        {...props}
+      >
+        {children}
+      </h4>
+    ),
+    h5: ({ node: _node, className, ...props }) => (
+      <h5 className={cn(headingClassName, 'mb-2 mt-7 text-base leading-snug', className)} {...props} />
+    ),
+    h6: ({ node: _node, className, ...props }) => (
+      <h6 className={cn(headingClassName, 'mb-2 mt-6 text-base leading-snug text-muted-foreground', className)} {...props} />
+    ),
+    a: ({ node: _node, href, className, children, ...props }) => {
+      const opensNewTab = Boolean(href && /^https?:\/\//i.test(href))
+      return (
+        <a
+          href={href}
+          className={cn(
+            'rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 outline-none transition-colors hover:decoration-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none',
+            className,
+          )}
+          target={opensNewTab ? '_blank' : undefined}
+          rel={opensNewTab ? 'noopener noreferrer' : undefined}
+          {...props}
+        >
+          {children}
+          {opensNewTab && <span className="sr-only">（在新标签页打开）</span>}
+        </a>
+      )
+    },
+    table: ({ node: _node, className, ...props }) => (
+      <div
+        className="my-8 max-w-full overflow-x-auto rounded-sm border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        role="region"
+        aria-label="可横向滚动的数据表"
+        tabIndex={0}
+      >
+        <table className={cn('my-0 w-full min-w-[36rem] border-collapse text-sm', className)} {...props} />
+      </div>
+    ),
+    th: ({ node: _node, className, ...props }) => (
+      <th className={cn('border-b border-r border-border bg-muted/70 px-4 py-3 text-left font-semibold last:border-r-0', className)} {...props} />
+    ),
+    td: ({ node: _node, className, ...props }) => (
+      <td className={cn('border-b border-r border-border/70 px-4 py-3 align-top last:border-r-0', className)} {...props} />
+    ),
+    img: ({ node: _node, src, alt, className }) => (
+      <SafeMarkdownImage src={src} alt={alt ?? undefined} className={className} />
+    ),
+    pre: ({ node: _node, className, ...props }) => (
+      <pre
+        className={cn('my-8 max-w-full overflow-x-auto rounded-md border border-border bg-muted/65 p-4 text-sm leading-relaxed focus-visible:ring-2 focus-visible:ring-ring [&>code]:bg-transparent [&>code]:p-0', className)}
+        tabIndex={0}
+        {...props}
+      />
+    ),
+    code: ({ node: _node, className, ...props }) => (
+      <code
+        className={cn('rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em] before:content-none after:content-none', className)}
+        {...props}
+      />
+    ),
+    blockquote: ({ node: _node, className, ...props }) => (
+      <blockquote
+        className={cn('my-8 border-l-2 border-primary/70 pl-5 text-foreground/80 not-italic', className)}
+        {...props}
+      />
+    ),
+    p: ({ node: _node, className, ...props }) => (
+      <p className={cn('my-5 text-base leading-8 text-foreground/88', className)} {...props} />
+    ),
   }
-
-  return result.join('\n')
-}
-
-/** 从 markdown 文本中提取 heading 用于 TOC */
-function extractHeadings(content: string): { id: string; text: string; level: number }[] {
-  const headings: { id: string; text: string; level: number }[] = []
-  const lines = content.split('\n')
-  let inCode = false
-
-  for (const line of lines) {
-    if (line.startsWith('```')) {
-      inCode = !inCode
-      continue
-    }
-    if (inCode) continue
-
-    const match = line.match(/^(#{2,4})\s+(.+)/)
-    if (match) {
-      const level = match[1].length
-      const text = match[2].replace(/[*_`\[\]]/g, '').trim()
-      const id = text
-        .toLowerCase()
-        .replace(/[^\w\u4e00-\u9fff\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .slice(0, 60)
-      headings.push({ id, text, level })
-    }
-  }
-  return headings
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 }
 
 /** 右侧 TOC 大纲组件 */
@@ -264,9 +284,9 @@ function TocSidebar({ headings }: { headings: { id: string; text: string; level:
   if (headings.length === 0) return null
 
   return (
-    <nav className="sticky top-8 hidden xl:block w-56 shrink-0">
+    <nav className="sticky top-8 hidden w-56 shrink-0 self-start xl:block" aria-label="文章目录">
       <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-        <List className="h-3.5 w-3.5" />
+        <List className="h-3.5 w-3.5" aria-hidden="true" />
         目录
       </div>
       <ul className="space-y-1 border-l border-border/50">
@@ -276,10 +296,13 @@ function TocSidebar({ headings }: { headings: { id: string; text: string; level:
               href={`#${h.id}`}
               onClick={(e) => {
                 e.preventDefault()
-                document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' })
+                const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                document.getElementById(h.id)?.scrollIntoView({
+                  behavior: reduceMotion ? 'auto' : 'smooth',
+                })
               }}
               className={cn(
-                'block text-xs leading-relaxed transition-colors hover:text-foreground',
+                'block rounded-r-sm py-1.5 text-xs leading-relaxed outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none',
                 h.level === 2 ? 'pl-3' : h.level === 3 ? 'pl-6' : 'pl-9',
                 activeId === h.id
                   ? 'text-foreground font-medium border-l-2 border-primary -ml-px'
@@ -329,6 +352,23 @@ export default function FeedDetailPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // Keep the parsed Markdown and component identities stable across SWR/state
+  // re-renders. This preserves image consent and avoids reparsing large bodies.
+  const rendersFullContent = article ? canRenderFullContent(article) : false
+  const articleContent = article?.content
+  const articleTitle = article?.title
+  const articleSummary = article?.summary
+  const readerContent = useMemo(() => (
+    rendersFullContent && articleTitle
+      ? normalizeReaderMarkdown(articleContent ?? '', articleTitle, articleSummary ?? undefined)
+      : null
+  ), [rendersFullContent, articleContent, articleTitle, articleSummary])
+  const headings = useMemo(
+    () => (readerContent ? extractMarkdownHeadings(readerContent) : []),
+    [readerContent],
+  )
+  const components = useMemo(() => createMarkdownComponents(headings), [headings])
+
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -366,47 +406,10 @@ export default function FeedDetailPage() {
   const displayScore = toDisplayScore(article.score)
   const scoreTier = getScoreTier(article.score)
   const sourceType = inferSourceType(article.source, article.url)
-  const cleanedContent = article.content ? cleanContent(article.content) : null
-  const headings = cleanedContent ? extractHeadings(cleanedContent) : []
-
-  // 自定义 ReactMarkdown 组件映射：给 heading 加上 id
-  const components: Components = {
-    h2: ({ children, ...props }) => {
-      const text = typeof children === 'string' ? children : extractTextFromChildren(children)
-      const id = text
-        .toLowerCase()
-        .replace(/[^\w\u4e00-\u9fff\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .slice(0, 60)
-      return <h2 id={id} {...props}>{children}</h2>
-    },
-    h3: ({ children, ...props }) => {
-      const text = typeof children === 'string' ? children : extractTextFromChildren(children)
-      const id = text
-        .toLowerCase()
-        .replace(/[^\w\u4e00-\u9fff\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .slice(0, 60)
-      return <h3 id={id} {...props}>{children}</h3>
-    },
-    h4: ({ children, ...props }) => {
-      const text = typeof children === 'string' ? children : extractTextFromChildren(children)
-      const id = text
-        .toLowerCase()
-        .replace(/[^\w\u4e00-\u9fff\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .slice(0, 60)
-      return <h4 id={id} {...props}>{children}</h4>
-    },
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 flex gap-10">
+    <div className="mx-auto flex max-w-6xl gap-12 px-4 py-8 sm:px-6 lg:py-12">
       {/* 主内容区 */}
-      <div className="flex-1 min-w-0 max-w-3xl">
+      <main className="min-w-0 w-full max-w-[65ch] flex-1" id="main-content">
         {/* Back */}
         <Link
           href="/feed"
@@ -519,13 +522,29 @@ export default function FeedDetailPage() {
           </section>
 
           {/* Full Article Content */}
-          {cleanedContent && (
-            <section className="mb-8 pt-4 border-t">
-              <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:tracking-tight prose-headings:scroll-mt-20 prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:text-sm prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-img:rounded-lg prose-img:max-w-full prose-blockquote:border-l-primary prose-hr:border-border">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-                  {cleanedContent}
+          {readerContent ? (
+            <section className="mb-10 border-t pt-8" aria-label="文章正文">
+              <div className="prose max-w-[65ch] text-base dark:prose-invert prose-hr:border-border prose-li:my-2 prose-li:leading-8 prose-ol:my-6 prose-ul:my-6 prose-strong:text-foreground">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={components}
+                  skipHtml
+                >
+                  {readerContent}
                 </ReactMarkdown>
               </div>
+            </section>
+          ) : (
+            <section className="mb-8 border-y border-border py-6" aria-labelledby="reader-fallback-title">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                内容状态
+              </p>
+              <h2 id="reader-fallback-title" className="text-lg font-semibold tracking-tight">
+                本站暂不展示完整原文
+              </h2>
+              <p className="mt-3 max-w-[60ch] text-base leading-7 text-muted-foreground">
+                当前条目仅提供 AI 导读与推荐理由。完整内容的格式、质量与公开许可尚未同时通过验证，请前往来源网站阅读原文。
+              </p>
             </section>
           )}
 
@@ -548,21 +567,10 @@ export default function FeedDetailPage() {
             </Button>
           </div>
         </article>
-      </div>
+      </main>
 
       {/* 右侧 TOC 大纲 */}
-      {cleanedContent && <TocSidebar headings={headings} />}
+      {readerContent && <TocSidebar headings={headings} />}
     </div>
   )
-}
-
-/** 从 React children 中提取纯文本 */
-function extractTextFromChildren(children: React.ReactNode): string {
-  if (typeof children === 'string') return children
-  if (typeof children === 'number') return String(children)
-  if (Array.isArray(children)) return children.map(extractTextFromChildren).join('')
-  if (children && typeof children === 'object' && 'props' in children) {
-    return extractTextFromChildren((children as React.ReactElement).props.children)
-  }
-  return ''
 }

@@ -32,7 +32,19 @@ export async function GET(
   }
 
   const article = await env.DB.prepare(
-    'SELECT * FROM articles WHERE url_hash = ? AND approved_for_publication = 1'
+    `SELECT
+      url_hash, title, original_title, summary, takeaway,
+      CASE WHEN content_quality = 'verified_fulltext'
+             AND content_format = 'markdown_v1'
+             AND fulltext_publication_allowed = 1
+           THEN content ELSE NULL END AS content,
+      content_format, content_quality, content_hash, content_chars,
+      content_quality_score, content_version, content_extracted_at, content_source,
+      fulltext_publication_allowed,
+      source, url, category, topic, type, featured, score, signal, novelty,
+      usefulness, content_potential, published_at, discovered_at, created_at
+    FROM articles
+    WHERE url_hash = ? AND approved_for_publication = 1`
   )
     .bind(id)
     .first()

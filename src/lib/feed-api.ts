@@ -3,6 +3,10 @@ const MAX_SUMMARY_LENGTH = 5_000
 const MAX_TAKEAWAY_LENGTH = 500
 const MAX_SOURCE_LENGTH = 100
 const MAX_URL_LENGTH = 2_048
+export const MAX_CONTENT_CHARS = 200_000
+export const MAX_FEED_REQUEST_BYTES = 1024 * 1024
+export const MAX_FEED_BATCH_SIZE = 50
+export const MAX_CONTENT_BATCH_SIZE = 10
 
 export const FEED_LIST_COLUMNS = [
   'url_hash',
@@ -46,11 +50,28 @@ export interface FeedArticleInput {
   published_at: string
   discovered_at: string
   approved_for_publication: 1
+  content: VerifiedContentInput | null
+}
+
+export interface VerifiedContentInput {
+  body: string
+  format: 'markdown_v1'
+  quality: 'verified_fulltext'
+  hash: string
+  chars: number
+  quality_score: number
+  extracted_at: string
+  source: string
+  fulltext_publication_allowed: true
 }
 
 type ValidationResult =
   | { valid: true; article: FeedArticleInput }
   | { valid: false; error: string }
+
+export type FeedRequestValidation =
+  | { valid: true; articles: FeedArticleInput[] }
+  | { valid: false; code: string; message: string; status: number; details?: string[] }
 
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, '').trim()
@@ -88,7 +109,7 @@ function validPublicUrl(value: unknown): value is string {
   }
 }
 
-function validExplicitTimestamp(value: unknown): value is string {
+export function validExplicitTimestamp(value: unknown): value is string {
   if (typeof value !== 'string') return false
   const match = /^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value)
   if (!match || Number.isNaN(Date.parse(value))) return false
@@ -104,7 +125,69 @@ function validExplicitTimestamp(value: unknown): value is string {
   )
 }
 
-export function validateFeedArticle(value: unknown): ValidationResult {
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function validateContent(value: unknown): Promise<
+  { value: VerifiedContentInput | null } | { error: string }
+> {
+  if (value == null) return { value: null }
+  if (typeof value !== 'object' || Array.isArray(value)) return { error: 'content must be an object' }
+  const content = value as Record<string, unknown>
+  if (typeof content.body !== 'string' || content.body.length === 0) {
+    return { error: 'content.body is required' }
+  }
+  const characterCount = [...content.body].length
+  if (characterCount > MAX_CONTENT_CHARS) {
+    return { error: `content.body exceeds ${MAX_CONTENT_CHARS} characters` }
+  }
+  if (content.format !== 'markdown_v1') return { error: 'content.format must be markdown_v1' }
+  if (content.quality !== 'verified_fulltext') {
+    return { error: 'content.quality must be verified_fulltext' }
+  }
+  if (content.fulltext_publication_allowed !== true) {
+    return { error: 'content.fulltext_publication_allowed must be true' }
+  }
+  if (typeof content.hash !== 'string' || !/^[a-f0-9]{64}$/i.test(content.hash)) {
+    return { error: 'content.hash must be a 64-character SHA-256 digest' }
+  }
+  if ((await sha256Hex(content.body)) !== content.hash.toLowerCase()) {
+    return { error: 'content.hash does not match content.body' }
+  }
+  if (!Number.isInteger(content.chars) || content.chars !== characterCount) {
+    return { error: 'content.chars must match the body character count' }
+  }
+  if (
+    !Number.isInteger(content.quality_score)
+    || (content.quality_score as number) < 0
+    || (content.quality_score as number) > 100
+  ) {
+    return { error: 'content.quality_score must be an integer from 0 to 100' }
+  }
+  if (!validExplicitTimestamp(content.extracted_at)) {
+    return { error: 'content.extracted_at must be an ISO date with an explicit timezone' }
+  }
+  const source = boundedString(content.source, 'content.source', MAX_SOURCE_LENGTH, true)
+  if ('error' in source) return { error: source.error }
+
+  return {
+    value: {
+      body: content.body,
+      format: 'markdown_v1',
+      quality: 'verified_fulltext',
+      hash: content.hash.toLowerCase(),
+      chars: characterCount,
+      quality_score: content.quality_score as number,
+      extracted_at: content.extracted_at,
+      source: source.value!,
+      fulltext_publication_allowed: true,
+    },
+  }
+}
+
+export async function validateFeedArticle(value: unknown): Promise<ValidationResult> {
   if (!value || typeof value !== 'object') return { valid: false, error: 'article must be an object' }
   const article = value as Record<string, unknown>
 
@@ -147,6 +230,9 @@ export function validateFeedArticle(value: unknown): ValidationResult {
     return { valid: false, error: 'content_potential is invalid' }
   }
 
+  const content = await validateContent(article.content)
+  if ('error' in content) return { valid: false, error: content.error }
+
   return {
     valid: true,
     article: {
@@ -169,8 +255,112 @@ export function validateFeedArticle(value: unknown): ValidationResult {
       published_at: article.published_at,
       discovered_at: article.discovered_at,
       approved_for_publication: 1,
+      content: content.value,
     },
   }
+}
+
+export async function validateFeedRequest(request: Request): Promise<FeedRequestValidation> {
+  const contentType = request.headers.get('Content-Type') || ''
+  const mediaType = contentType.split(';', 1)[0].trim().toLowerCase()
+  if (mediaType !== 'application/json') {
+    return { valid: false, code: 'INVALID_CONTENT_TYPE', message: 'Expected application/json', status: 415 }
+  }
+
+  const contentLength = request.headers.get('Content-Length')
+  if (contentLength != null) {
+    const declaredBytes = Number(contentLength)
+    if (!Number.isSafeInteger(declaredBytes) || declaredBytes < 0) {
+      return {
+        valid: false,
+        code: 'INVALID_CONTENT_LENGTH',
+        message: 'Content-Length must be a non-negative integer',
+        status: 400,
+      }
+    }
+    if (declaredBytes > MAX_FEED_REQUEST_BYTES) {
+      return { valid: false, code: 'REQUEST_TOO_LARGE', message: 'Request body exceeds 1 MiB', status: 413 }
+    }
+  }
+
+  let body: unknown
+  try {
+    if (!request.body) {
+      return { valid: false, code: 'INVALID_JSON', message: 'Request body is not valid JSON', status: 400 }
+    }
+    const reader = request.body.getReader()
+    const chunks: Uint8Array[] = []
+    let totalBytes = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalBytes += value.byteLength
+      if (totalBytes > MAX_FEED_REQUEST_BYTES) {
+        await reader.cancel('request body exceeds limit')
+        return { valid: false, code: 'REQUEST_TOO_LARGE', message: 'Request body exceeds 1 MiB', status: 413 }
+      }
+      chunks.push(value)
+    }
+    const bytes = new Uint8Array(totalBytes)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    const rawBody = new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+    body = JSON.parse(rawBody)
+  } catch {
+    return { valid: false, code: 'INVALID_JSON', message: 'Request body is not valid JSON', status: 400 }
+  }
+
+  if (!body || typeof body !== 'object' || !Array.isArray((body as Record<string, unknown>).articles)) {
+    return { valid: false, code: 'VALIDATION_ERROR', message: 'Expected { articles: [...] }', status: 422 }
+  }
+  const { articles } = body as { articles: unknown[] }
+  if (articles.length === 0) {
+    return { valid: false, code: 'VALIDATION_ERROR', message: 'articles array is empty', status: 422 }
+  }
+  if (articles.length > MAX_FEED_BATCH_SIZE) {
+    return {
+      valid: false,
+      code: 'VALIDATION_ERROR',
+      message: `Batch size exceeds maximum of ${MAX_FEED_BATCH_SIZE}`,
+      status: 422,
+    }
+  }
+  if (
+    articles.length > MAX_CONTENT_BATCH_SIZE
+    && articles.some((article) => (
+      typeof article === 'object'
+      && article !== null
+      && (article as Record<string, unknown>).content != null
+    ))
+  ) {
+    return {
+      valid: false,
+      code: 'VALIDATION_ERROR',
+      message: `Content-bearing batch size exceeds maximum of ${MAX_CONTENT_BATCH_SIZE}`,
+      status: 422,
+    }
+  }
+
+  const validArticles: FeedArticleInput[] = []
+  const errors: string[] = []
+  for (let index = 0; index < articles.length; index += 1) {
+    const result = await validateFeedArticle(articles[index])
+    if (result.valid) validArticles.push(result.article)
+    else errors.push(`Article ${index}: ${result.error}`)
+  }
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Some articles failed validation',
+      status: 422,
+      details: errors,
+    }
+  }
+  return { valid: true, articles: validArticles }
 }
 
 export async function secureTokenEquals(actual: string, expected?: string): Promise<boolean> {

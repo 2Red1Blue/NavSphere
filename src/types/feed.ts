@@ -6,7 +6,16 @@ export interface Article {
   original_title?: string
   summary?: string
   takeaway?: string
-  content?: string
+  content?: string | null
+  content_format?: 'markdown_v1' | null
+  content_quality?: 'verified_fulltext' | 'summary_only' | 'legacy_unverified' | null
+  content_hash?: string | null
+  content_chars?: number | null
+  content_quality_score?: number | null
+  content_version?: number | null
+  content_source?: string | null
+  content_extracted_at?: string | null
+  fulltext_publication_allowed?: boolean | number | null
   source: string
   url: string
   category: string

@@ -3,11 +3,11 @@
 // POST /api/feed - Ingest articles from pipeline
 
 import { getRequestContext } from '@cloudflare/next-on-pages'
+import { FEED_UPSERT_SQL } from '@/lib/feed-ingest-sql'
 import {
   FEED_LIST_COLUMNS,
   secureTokenEquals,
-  validateFeedArticle,
-  type FeedArticleInput,
+  validateFeedRequest,
 } from '@/lib/feed-api'
 
 export const runtime = 'edge'
@@ -16,7 +16,6 @@ const ALLOWED_SORT_FIELDS = ['score', 'discovered_at', 'published_at', 'created_
 const ALLOWED_ORDERS = ['asc', 'desc']
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 50
-const MAX_BATCH_SIZE = 50
 function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -132,73 +131,24 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
     return errorResponse('UNAUTHORIZED', 'Invalid or missing API key', 401)
   }
 
-  const contentType = request.headers.get('Content-Type') || ''
-  if (!contentType.includes('application/json')) {
-    return errorResponse('INVALID_CONTENT_TYPE', 'Expected application/json', 415)
+  const validated = await validateFeedRequest(request)
+  if (!validated.valid) {
+    return errorResponse(validated.code, validated.message, validated.status, validated.details)
   }
+  const validArticles = validated.articles
 
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return errorResponse('INVALID_JSON', 'Request body is not valid JSON', 400)
-  }
-
-  if (!body || typeof body !== 'object' || !Array.isArray((body as Record<string, unknown>).articles)) {
-    return errorResponse('VALIDATION_ERROR', 'Expected { articles: [...] }', 422)
-  }
-
-  const { articles } = body as { articles: unknown[] }
-
-  if (articles.length === 0) {
-    return errorResponse('VALIDATION_ERROR', 'articles array is empty', 422)
-  }
-
-  if (articles.length > MAX_BATCH_SIZE) {
-    return errorResponse('VALIDATION_ERROR', `Batch size exceeds maximum of ${MAX_BATCH_SIZE}`, 422)
-  }
-
-  const validArticles: FeedArticleInput[] = []
-  const errors: string[] = []
-  for (let i = 0; i < articles.length; i++) {
-    const result = validateFeedArticle(articles[i])
-    if (result.valid) validArticles.push(result.article)
-    else errors.push(`Article ${i}: ${result.error}`)
-  }
-
-  if (errors.length > 0) {
-    return errorResponse('VALIDATION_ERROR', 'Some articles failed validation', 422, errors)
-  }
-
-  const stmt = db.prepare(`
-    INSERT INTO articles (url_hash, title, original_title, summary, takeaway, content, source, url, category, topic, type, featured, score, signal, novelty, usefulness, content_potential, published_at, discovered_at, approved_for_publication)
-    VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
-    ON CONFLICT(url_hash) DO UPDATE SET
-      title = excluded.title,
-      original_title = excluded.original_title,
-      summary = excluded.summary,
-      takeaway = excluded.takeaway,
-      source = excluded.source,
-      url = excluded.url,
-      category = excluded.category,
-      topic = excluded.topic,
-      type = excluded.type,
-      featured = excluded.featured,
-      score = excluded.score,
-      signal = excluded.signal,
-      novelty = excluded.novelty,
-      usefulness = excluded.usefulness,
-      content_potential = excluded.content_potential,
-      published_at = excluded.published_at,
-      discovered_at = excluded.discovered_at,
-      approved_for_publication = excluded.approved_for_publication
-  `)
+  const stmt = db.prepare(FEED_UPSERT_SQL)
 
   const batchResults = await db.batch(
     validArticles.map((a) =>
       stmt.bind(
         a.url_hash, a.title, a.original_title, a.summary,
-        a.takeaway, a.source, a.url, a.category, a.topic, a.type, a.featured,
+        a.takeaway, a.content?.body ?? null, a.content?.format ?? null,
+        a.content?.quality ?? 'summary_only', a.content?.hash ?? null,
+        a.content?.chars ?? 0, a.content?.quality_score ?? 0,
+        a.content?.extracted_at ?? null, a.content?.source ?? null,
+        a.content?.fulltext_publication_allowed ? 1 : 0,
+        a.source, a.url, a.category, a.topic, a.type, a.featured,
         a.score, a.signal, a.novelty, a.usefulness, a.content_potential,
         a.published_at, a.discovered_at, a.approved_for_publication
       )
