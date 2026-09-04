@@ -1,3 +1,5 @@
+import type { FeedArticleInput } from './feed-api'
+
 const CONTENT_REPLACE_PREDICATE = String.raw`
   excluded.content IS NOT NULL
   AND articles.content_hash IS NOT excluded.content_hash
@@ -52,8 +54,8 @@ const CONTENT_REPLACEMENTS = CONTENT_COLUMNS.map((column) => {
         THEN excluded.${column} ELSE articles.${column} END`
 }).join(',')
 
-/** Canonical D1 statement shared by the edge route and executable tests. */
-export const FEED_UPSERT_SQL = String.raw`
+/** Keep insertion columns and placeholder order identical for both write paths. */
+const FEED_INSERT_SQL = String.raw`
     INSERT INTO articles (
       url_hash, title, original_title, summary, takeaway, content,
       content_format, content_quality, content_hash, content_chars,
@@ -70,6 +72,10 @@ export const FEED_UPSERT_SQL = String.raw`
       ?21, ?22, ?23, ?24, ?25, ?26,
       ?27, ?28
     )
+`
+
+/** Canonical D1 statement shared by the edge route and executable tests. */
+export const FEED_UPSERT_SQL = String.raw`${FEED_INSERT_SQL}
     ON CONFLICT(url_hash) DO UPDATE SET
       title = excluded.title,
       original_title = excluded.original_title,
@@ -93,3 +99,22 @@ export const FEED_UPSERT_SQL = String.raw`
       content_version = articles.content_version + CASE WHEN ${CONTENT_REPLACE_PREDICATE}
         THEN 1 ELSE 0 END
 `
+
+/** Preparing a selected link must never alter an existing publication decision. */
+export const FEED_PREPARE_SQL = String.raw`${FEED_INSERT_SQL}
+    ON CONFLICT(url_hash) DO NOTHING
+`
+
+export function feedArticleBindings(a: FeedArticleInput): Array<string | number | null> {
+  return [
+    a.url_hash, a.title, a.original_title, a.summary,
+    a.takeaway, a.content?.body ?? null, a.content?.format ?? null,
+    a.content?.quality ?? 'summary_only', a.content?.hash ?? null,
+    a.content?.chars ?? 0, a.content?.quality_score ?? 0,
+    a.content?.extracted_at ?? null, a.content?.source ?? null,
+    a.content?.fulltext_publication_allowed ? 1 : 0,
+    a.source, a.url, a.category, a.topic, a.type, a.featured,
+    a.score, a.signal, a.novelty, a.usefulness, a.content_potential ?? null,
+    a.published_at, a.discovered_at, a.approved_for_publication,
+  ]
+}

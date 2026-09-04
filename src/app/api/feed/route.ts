@@ -3,7 +3,7 @@
 // POST /api/feed - Ingest articles from pipeline
 
 import { getRequestContext } from '@cloudflare/next-on-pages'
-import { FEED_UPSERT_SQL } from '@/lib/feed-ingest-sql'
+import { FEED_UPSERT_SQL, feedArticleBindings } from '@/lib/feed-ingest-sql'
 import {
   FEED_LIST_COLUMNS,
   secureTokenEquals,
@@ -142,17 +142,7 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
 
   const batchResults = await db.batch(
     validArticles.map((a) =>
-      stmt.bind(
-        a.url_hash, a.title, a.original_title, a.summary,
-        a.takeaway, a.content?.body ?? null, a.content?.format ?? null,
-        a.content?.quality ?? 'summary_only', a.content?.hash ?? null,
-        a.content?.chars ?? 0, a.content?.quality_score ?? 0,
-        a.content?.extracted_at ?? null, a.content?.source ?? null,
-        a.content?.fulltext_publication_allowed ? 1 : 0,
-        a.source, a.url, a.category, a.topic, a.type, a.featured,
-        a.score, a.signal, a.novelty, a.usefulness, a.content_potential,
-        a.published_at, a.discovered_at, a.approved_for_publication
-      )
+      stmt.bind(...feedArticleBindings(a))
     )
   )
 

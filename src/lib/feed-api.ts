@@ -8,7 +8,7 @@ export const MAX_FEED_REQUEST_BYTES = 1024 * 1024
 export const MAX_FEED_BATCH_SIZE = 50
 export const MAX_CONTENT_BATCH_SIZE = 10
 export const FEED_RETRY_AFTER_SECONDS = 300
-export type FeedErrorOperation = 'list' | 'ingest' | 'detail' | 'revoke' | 'restore'
+export type FeedErrorOperation = 'list' | 'ingest' | 'prepare' | 'detail' | 'revoke' | 'restore'
 
 /**
  * Convert unexpected D1/schema failures into a retryable, non-cacheable response.
@@ -22,7 +22,8 @@ export async function withFeedErrorBoundary(
   try {
     return await handler()
   } catch (error) {
-    console.error(`NavSphere Feed ${operation} failed`, error)
+    if (operation === 'prepare') console.error('NavSphere Feed prepare failed')
+    else console.error(`NavSphere Feed ${operation} failed`, error)
     return new Response(JSON.stringify({
       error: {
         code: 'SERVICE_UNAVAILABLE',
