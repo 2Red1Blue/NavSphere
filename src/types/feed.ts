@@ -1,4 +1,11 @@
 // Types for the Content OS Feed module
+import type { OriginalUrlProvenance } from '@/lib/source-provenance'
+import type { EditorialPublication } from '@/lib/editorial-contract'
+
+export interface PublicEditorial extends EditorialPublication {
+  revision: number
+  published_at: string
+}
 
 export interface Article {
   url_hash: string
@@ -7,6 +14,7 @@ export interface Article {
   summary?: string
   takeaway?: string
   content?: string | null
+  editorial?: PublicEditorial | null
   content_format?: 'markdown_v1' | null
   content_quality?: 'verified_fulltext' | 'summary_only' | 'legacy_unverified' | null
   content_hash?: string | null
@@ -18,6 +26,8 @@ export interface Article {
   fulltext_publication_allowed?: boolean | number | null
   source: string
   url: string
+  original_url?: string | null
+  original_url_provenance?: OriginalUrlProvenance | null
   category: string
   topic?: string
   type?: string

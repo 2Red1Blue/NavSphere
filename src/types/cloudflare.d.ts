@@ -26,6 +26,10 @@ interface D1Database {
 interface CloudflareEnv {
   DB: D1Database
   CONTENT_OS_API_KEY?: string
+  FEED_EDITORIAL_ENABLED?: string
+  CONTENT_ARCHIVE?: import('../lib/content-archive').ArchiveKV
+  CONTENT_ARCHIVE_ENABLED?: string
+  CONTENT_ARCHIVE_COMPACT_ENABLED?: string
 }
 
 // @cloudflare/next-on-pages getRequestContext

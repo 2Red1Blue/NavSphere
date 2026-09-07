@@ -121,9 +121,7 @@ test('D1 upsert and detail route enforce the verified content gate', () => {
   assert.match(detailHandler, /return\s+withFeedErrorBoundary\(async\s*\(\)\s*=>\s*\{/)
   assert.match(detailHandler, /withFeedErrorBoundary\([\s\S]*,\s*['"]detail['"]\)\s*\n\}\s*$/)
   assert.doesNotMatch(detailSource, /SELECT\s+\*/)
-  assert.match(detailSource, /content_quality\s*=\s*'verified_fulltext'/)
-  assert.match(detailSource, /content_format\s*=\s*'markdown_v1'/)
-  assert.match(detailSource, /fulltext_publication_allowed\s*=\s*1/)
+  assert.match(detailSource, /readFeedDetail\(env\.DB,\s*env\.CONTENT_ARCHIVE,\s*id\)/)
 
   for (const relativePath of [
     '../src/app/api/feed/[id]/revoke/route.ts',
@@ -183,7 +181,8 @@ test('canonical D1 upsert executes idempotent and quality-aware content transiti
       assert.fail(`sqlite3 CLI is required for the upsert integration test: ${result.error?.message ?? 'not found'}`)
     }
     assert.equal(result.status, 0, result.stderr)
-    return JSON.parse(result.stdout.trim()) as {
+    // UPSERT RETURNING emits its receipt before the final state projection.
+    return JSON.parse(result.stdout.trim().split('\n').at(-1) ?? '') as {
       hash: string | null
       body: string | null
       score: number

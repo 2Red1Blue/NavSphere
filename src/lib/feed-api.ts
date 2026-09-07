@@ -1,3 +1,6 @@
+import { validOriginalMetadata } from './source-provenance'
+import type { OriginalUrlProvenance } from './source-provenance'
+
 const MAX_TITLE_LENGTH = 500
 const MAX_SUMMARY_LENGTH = 5_000
 const MAX_TAKEAWAY_LENGTH = 500
@@ -48,6 +51,8 @@ export const FEED_LIST_COLUMNS = [
   'takeaway',
   'source',
   'url',
+  'original_url',
+  'original_url_provenance',
   'category',
   'topic',
   'type',
@@ -70,6 +75,8 @@ export interface FeedArticleInput {
   takeaway: string | null
   source: string
   url: string
+  original_url: string | null
+  original_url_provenance: OriginalUrlProvenance | null
   category: string
   topic: string | null
   type: string | null
@@ -231,6 +238,15 @@ export async function validateFeedArticle(value: unknown): Promise<ValidationRes
   }
   if (!validPublicUrl(article.url)) return { valid: false, error: 'url must be a public HTTP(S) URL' }
 
+  const originalUrl = article.original_url == null || article.original_url === '' ? null : article.original_url
+  const originalProvenance = article.original_url_provenance == null || article.original_url_provenance === ''
+    ? null : article.original_url_provenance
+  if ((originalUrl !== null || originalProvenance !== null) && !validOriginalMetadata({
+    url: article.url, original_url: originalUrl, original_url_provenance: originalProvenance,
+  })) {
+    return { valid: false, error: 'original_url and original_url_provenance must be a valid public original and evidence pair for an exact AIHOT identity' }
+  }
+
   const title = boundedString(article.title, 'title', MAX_TITLE_LENGTH, true)
   const source = boundedString(article.source, 'source', MAX_SOURCE_LENGTH, true)
   const originalTitle = boundedString(article.original_title, 'original_title', MAX_TITLE_LENGTH)
@@ -275,6 +291,8 @@ export async function validateFeedArticle(value: unknown): Promise<ValidationRes
       takeaway: takeaway.value,
       source: source.value!,
       url: article.url,
+      original_url: originalUrl as string | null,
+      original_url_provenance: originalProvenance as OriginalUrlProvenance | null,
       category: typeof article.category === 'string' && article.category.length <= 100 ? stripHtml(article.category) || 'general' : 'general',
       topic: typeof article.topic === 'string' && article.topic.length <= 100 ? stripHtml(article.topic) || null : null,
       type: typeof article.type === 'string' && article.type.length <= 50 ? stripHtml(article.type) || null : null,
@@ -290,6 +308,32 @@ export async function validateFeedArticle(value: unknown): Promise<ValidationRes
       content: content.value,
     },
   }
+}
+
+/** RETURNING identifies the affected article; D1 write counts also include triggers. */
+export function feedIngestOutcome(
+  results: ReadonlyArray<{ success: boolean; results?: unknown; meta?: unknown }>,
+  expectedIds: readonly string[],
+): { status: 201 | 409 | 503; ingested: number; conflicts: number } {
+  let ingested = 0
+  let conflicts = 0
+  for (const [index, result] of results.entries()) {
+    if (result?.success !== true || !Array.isArray(result.results)) continue
+    if (result.results.length === 0) {
+      conflicts++
+      continue
+    }
+    const receipt: unknown = result.results[0]
+    if (result.results.length === 1 && receipt !== null && typeof receipt === 'object'
+      && !Array.isArray(receipt) && 'url_hash' in receipt
+      && typeof receipt.url_hash === 'string' && receipt.url_hash === expectedIds[index]) {
+      ingested++
+    }
+  }
+  if (expectedIds.length === 0 || results.length !== expectedIds.length || ingested + conflicts !== expectedIds.length) {
+    return { status: 503, ingested, conflicts }
+  }
+  return { status: conflicts > 0 ? 409 : 201, ingested, conflicts }
 }
 
 export async function validateFeedRequest(request: Request): Promise<FeedRequestValidation> {

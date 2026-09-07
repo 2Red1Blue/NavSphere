@@ -13,9 +13,11 @@ import { Button } from '@/registry/new-york/ui/button'
 import { Badge } from '@/registry/new-york/ui/badge'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
 import { FeedError } from '@/components/feed/feed-error'
+import { EditorialBrief } from '@/components/feed/editorial-brief'
 import {
   getCategoryLabel,
   getScoreTier,
+  getSourceLink,
   inferSourceType,
   SHANGHAI_TIME_ZONE,
   toDisplayScore,
@@ -25,6 +27,7 @@ import {
   extractMarkdownHeadings,
   normalizeReaderMarkdown,
 } from '@/lib/reader-markdown'
+import { validateEditorialPublication } from '@/lib/editorial-contract'
 import type { ReaderHeading } from '@/lib/reader-markdown'
 import type { Article } from '@/types/feed'
 import { cn } from '@/lib/utils'
@@ -71,6 +74,19 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   deep: { label: '深度', icon: '🔍' },
   news: { label: '新闻', icon: '📰' },
   tool: { label: '工具', icon: '🔧' },
+}
+
+function getRenderableEditorial(editorial: Article['editorial']): NonNullable<Article['editorial']> | null {
+  if (!editorial) return null
+  const { revision, published_at, ...publication } = editorial
+  if (!Number.isInteger(revision) || revision < 1 || revision > 2147483647
+    || typeof published_at !== 'string') return null
+  try {
+    validateEditorialPublication(publication)
+    return editorial
+  } catch {
+    return null
+  }
 }
 
 function SafeMarkdownImage({ src, alt, className }: {
@@ -330,7 +346,7 @@ export default function FeedDetailPage() {
     async function fetchArticle() {
       try {
         setLoading(true)
-        const res = await fetch(`/api/feed/${id}`)
+        const res = await fetch(`/api/feed/${id}`, { cache: 'no-store' })
         if (!res.ok) {
           if (res.status === 404) throw new Error('文章未找到')
           throw new Error(`加载失败 (${res.status})`)
@@ -354,15 +370,16 @@ export default function FeedDetailPage() {
 
   // Keep the parsed Markdown and component identities stable across SWR/state
   // re-renders. This preserves image consent and avoids reparsing large bodies.
+  const editorial = useMemo(() => getRenderableEditorial(article?.editorial), [article?.editorial])
   const rendersFullContent = article ? canRenderFullContent(article) : false
   const articleContent = article?.content
   const articleTitle = article?.title
   const articleSummary = article?.summary
   const readerContent = useMemo(() => (
-    rendersFullContent && articleTitle
+    !editorial && rendersFullContent && articleTitle
       ? normalizeReaderMarkdown(articleContent ?? '', articleTitle, articleSummary ?? undefined)
       : null
-  ), [rendersFullContent, articleContent, articleTitle, articleSummary])
+  ), [editorial, rendersFullContent, articleContent, articleTitle, articleSummary])
   const headings = useMemo(
     () => (readerContent ? extractMarkdownHeadings(readerContent) : []),
     [readerContent],
@@ -406,6 +423,7 @@ export default function FeedDetailPage() {
   const displayScore = toDisplayScore(article.score)
   const scoreTier = getScoreTier(article.score)
   const sourceType = inferSourceType(article.source, article.url)
+  const sourceLink = getSourceLink(article)
   return (
     <div className="mx-auto flex max-w-6xl gap-12 px-4 py-8 sm:px-6 lg:py-12">
       {/* 主内容区 */}
@@ -521,8 +539,10 @@ export default function FeedDetailPage() {
             </div>
           </section>
 
-          {/* Full Article Content */}
-          {readerContent ? (
+          {/* Editorials take the body slot; original Markdown is shown only otherwise. */}
+          {editorial ? (
+            <EditorialBrief editorial={editorial} />
+          ) : readerContent ? (
             <section className="mb-10 border-t pt-8" aria-label="文章正文">
               <div className="prose max-w-[65ch] text-base dark:prose-invert prose-hr:border-border prose-li:my-2 prose-li:leading-8 prose-ol:my-6 prose-ul:my-6 prose-strong:text-foreground">
                 <ReactMarkdown
@@ -543,19 +563,22 @@ export default function FeedDetailPage() {
                 本站暂不展示完整原文
               </h2>
               <p className="mt-3 max-w-[60ch] text-base leading-7 text-muted-foreground">
-                当前条目仅提供 AI 导读与推荐理由。完整内容的格式、质量与公开许可尚未同时通过验证，请前往来源网站阅读原文。
+                当前条目仅提供 AI 导读与推荐理由。完整原文的格式、质量与公开许可尚未同时通过验证。
+                {sourceLink?.label === 'AIHOT收录页'
+                  ? '尚未核验上游原文链接，可前往 AIHOT 收录页查看来源线索。'
+                  : sourceLink ? '可通过下方链接前往来源网站阅读。' : '当前没有可安全打开的来源链接。'}
               </p>
             </section>
           )}
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-4 border-t">
-            <Button asChild>
-              <a href={article.url} target="_blank" rel="noopener noreferrer" className="gap-2">
+            {sourceLink && <Button asChild>
+              <a href={sourceLink.url} target="_blank" rel="noopener noreferrer" className="gap-2">
                 <ExternalLink className="h-4 w-4" />
-                阅读原文
+                {sourceLink.label}
               </a>
-            </Button>
+            </Button>}
             <Button
               variant="outline"
               size="icon"

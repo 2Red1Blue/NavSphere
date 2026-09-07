@@ -394,11 +394,36 @@ pnpm run cf:migrations:list
 pnpm run cf:migrate
 pnpm run cf:deploy
 
+# D1 免费套餐容量与 30 天保留期预演（只读，不归档、不删除）
+pnpm run cf:retention-audit
+
+# 私有正文归档清单（默认只读，需新版 API；生产尚未启用归档）
+pnpm run cf:archive
+
 # Docker 部署
 pnpm run docker:build
 pnpm run docker:dev
 pnpm run docker:prod
 ```
+
+D1 归档需先保证历史链接、审批和全文撤销状态可恢复；不能直接按日期删除。
+容量阈值、故障处理及归档前置条件见 [D1 保留期运维指南](docs/d1-retention.md)。
+
+### Feed 私有正文归档（schema v9，默认关闭写入）
+
+迁移009支持旧正文存私有 Workers KV、D1保留文章ID/来源/搜索及发布撤回状态；列表和历史链接不改。`cf:archive`默认仅查清单，`stage`复制并校验后保留热正文，至少24小时后单独启用`compact`才可清空热正文；`rehydrate`只恢复字节、不恢复发布许可。项目每日KV写入尝试最多100次，CLI每批最多20篇。实际命名空间绑定、独立备份、冷读恢复演练、启用开关和每日调度仍需按运维指南完成，不能把本地实现当成线上已归档。归档版本须先迁移008和009再部署；包含下述独立编辑稿的新版本还需要迁移010。
+
+### Feed 独立新闻短稿（schema v10，发布写入默认关闭）
+
+短稿独立存入 `article_editorials`，阅读页显示“本站整理 · 独立新闻短稿”，与原文全文许可分开。标题、导语、事实、推断、局限和证据链接由固定结构渲染，不直接发布待审 Markdown。原始文章 ID、来源、评分及撤回状态不变。
+
+父项目 `scripts/publish_editorial.py` 提供待审包、显式审批、单篇发布、状态检查与撤回；发布和撤回默认 dry-run。审批绑定完整内容、证据、审阅记录和目标版本；修改后必须重新审批，撤回后须显式 restore。迁移010、配置保留、代码审查及具体稿件审批未完成前，不得把本地实现当成线上已发布。详见 [独立编辑稿发布指南](docs/editorial-publishing.md)。
+
+### Feed 上游原文（schema v8）
+
+迁移 `008-add-original-url.sql` 后，Feed 的列表、详情和日报会返回可选的 `original_url` / `original_url_provenance`。采集身份 `url` / `url_hash` 不变；有有效证据时阅读页跳转上游原文，未解决的 AIHOT 项目显示“AIHOT收录页”。这不代表全文转载许可或 AIHOT 原创认证。
+
+旧客户端省略两字段不会清空已存原文；相同原文保留已有证据；冲突原文或同 hash 不同身份返回 409，该行不被更新（同批其他行可能已成功）。`prepare` 仍只插入，不补写旧行；历史回填由父项目的 `scripts/backfill_source_provenance.py` 预览并生成独立的受保护 SQL，不能通过重发来修复。部署前先备份、执行 migration 008，再上线配套 API/UI；`tests/feed-provenance.test.ts` 覆盖迁移与链接安全契约。
 
 ### 项目结构
 

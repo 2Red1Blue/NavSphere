@@ -2,6 +2,7 @@ import { readdir } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { EDITORIAL_CONTRACT_COLUMNS } from '../src/lib/editorial-schema'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = dirname(SCRIPT_DIR)
@@ -10,7 +11,8 @@ const MAX_RESPONSE_BYTES = 256 * 1024
 const MAX_COMMAND_OUTPUT_BYTES = 128 * 1024
 const COMMAND_TIMEOUT_MS = 30_000
 const MIGRATION_QUERY = 'SELECT id, name, applied_at FROM d1_migrations ORDER BY id'
-const COLUMNS_QUERY = "SELECT name FROM pragma_table_info('articles') WHERE name IN ('content_format','content_quality','content_hash','content_chars','content_quality_score','content_version','content_extracted_at','content_source','fulltext_publication_allowed','fulltext_revoked_at') ORDER BY name"
+const COLUMNS_QUERY = "SELECT name FROM pragma_table_info('articles') WHERE name IN ('content_format','content_quality','content_hash','content_chars','content_quality_score','content_version','content_extracted_at','content_source','fulltext_publication_allowed','fulltext_revoked_at','original_url','original_url_provenance','fulltext_control_version','content_archive_key','content_archive_sha256','content_archive_version','content_archive_bytes','content_archived_at') ORDER BY name"
+const EDITORIAL_COLUMNS_QUERY = "SELECT name FROM pragma_table_info('article_editorials') ORDER BY name"
 const REQUIRED_COLUMNS = [
   'content_format',
   'content_quality',
@@ -22,6 +24,14 @@ const REQUIRED_COLUMNS = [
   'content_source',
   'fulltext_publication_allowed',
   'fulltext_revoked_at',
+  'original_url',
+  'original_url_provenance',
+  'fulltext_control_version',
+  'content_archive_key',
+  'content_archive_sha256',
+  'content_archive_version',
+  'content_archive_bytes',
+  'content_archived_at',
 ]
 
 export type GateStatus = 'passed' | 'failed'
@@ -250,6 +260,12 @@ async function runRemoteChecks(
     && columnsValid
     && REQUIRED_COLUMNS.every((column) => columns.includes(column))
 
+  const editorialResult = await commandRunner('pnpm', [...args, EDITORIAL_COLUMNS_QUERY])
+  const editorialRows = editorialResult.code === 0 ? parseWranglerRows(editorialResult.stdout) : null
+  const editorialValid = editorialRows !== null && editorialRows.every((row) => typeof row.name === 'string')
+  const editorialPass = editorialValid
+    && EDITORIAL_CONTRACT_COLUMNS.every((column) => editorialRows.some((row) => row.name === column))
+
   return [
     check('migrations', migrationPass ? 'passed' : 'failed', migrationCode),
     check(
@@ -261,6 +277,10 @@ async function runRemoteChecks(
           ? 'SCHEMA_INVALID_JSON'
           : columnsPass ? 'FULLTEXT_CONTRACT_PRESENT' : 'FULLTEXT_CONTRACT_INCOMPLETE',
     ),
+    check('editorial-schema', editorialPass ? 'passed' : 'failed',
+      editorialResult.code !== 0 ? 'EDITORIAL_SCHEMA_QUERY_FAILED'
+        : !editorialValid ? 'EDITORIAL_SCHEMA_INVALID_JSON'
+          : editorialPass ? 'EDITORIAL_CONTRACT_PRESENT' : 'EDITORIAL_CONTRACT_INCOMPLETE'),
   ]
 }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { FEED_LIST_COLUMNS } from './feed-api'
+import { EDITORIAL_CONTRACT_COLUMNS } from './editorial-schema'
 
 export const CONTENT_CONTRACT_COLUMNS = [
   'content',
@@ -13,6 +14,12 @@ export const CONTENT_CONTRACT_COLUMNS = [
   'content_source',
   'fulltext_publication_allowed',
   'fulltext_revoked_at',
+  'fulltext_control_version',
+  'content_archive_key',
+  'content_archive_sha256',
+  'content_archive_version',
+  'content_archive_bytes',
+  'content_archived_at',
 ] as const
 
 /** Every list/detail column plus the versioned full-content contract. */
@@ -53,6 +60,15 @@ export async function createHealthResponse(db: D1Database): Promise<NextResponse
         status: 'degraded',
         checks: { database: 'ok', schema: 'incomplete' },
         timestamp,
+      }, { status: 503 })
+    }
+
+    const editorialSchema = await db.prepare("PRAGMA table_info('article_editorials')").all<{ name: string }>()
+    const editorialColumns = new Set(editorialSchema.results.map((column) => column.name))
+    if (EDITORIAL_CONTRACT_COLUMNS.some((column) => !editorialColumns.has(column))) {
+      return NextResponse.json({
+        app: 'NavSphere', status: 'degraded',
+        checks: { database: 'ok', schema: 'incomplete' }, timestamp,
       }, { status: 503 })
     }
 

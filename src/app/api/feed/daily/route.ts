@@ -1,4 +1,5 @@
 import { getDailySection, toDisplayScore } from '@/lib/feed-view'
+import type { OriginalUrlProvenance } from '@/lib/source-provenance'
 
 export const runtime = 'edge'
 
@@ -15,6 +16,9 @@ export interface DailyArticle {
   summary: string | null
   takeaway: string | null
   source: string
+  url: string
+  original_url: string | null
+  original_url_provenance: OriginalUrlProvenance | null
   category: string
   topic: string | null
   type: string | null
@@ -131,7 +135,8 @@ async function archiveResponse(db: D1Database) {
 async function digestResponse(db: D1Database, date: string) {
   const articleStatement = db.prepare(`
     SELECT
-      url_hash, title, summary, takeaway, source, category, topic, type,
+      url_hash, title, summary, takeaway, source, url, original_url, original_url_provenance,
+      category, topic, type,
       score, published_at, discovered_at
     FROM articles
     WHERE approved_for_publication = 1

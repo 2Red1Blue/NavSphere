@@ -11,6 +11,6 @@ export async function POST(
   return withFeedErrorBoundary(async () => {
     const { env } = getRequestContext()
     const { id } = await params
-    return restoreFeedFullText(request, env.DB, env.CONTENT_OS_API_KEY, id)
+    return restoreFeedFullText(request, env.DB, env.CONTENT_OS_API_KEY, id, env.CONTENT_ARCHIVE)
   }, 'restore')
 }

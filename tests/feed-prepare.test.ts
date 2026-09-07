@@ -150,6 +150,7 @@ test('prepare uses canonical bindings and acknowledges only after D1 completes',
             null, null, 'summary_only', null, 0, 0, null, null, 0,
             article.source, article.url, article.category, article.topic, article.type, 1,
             24, 9, 7, 8, 'High', article.published_at, article.discovered_at, 1,
+            null, null,
           ])
           return { run() { started(); return result } }
         },
@@ -238,7 +239,7 @@ test('prepare binds omitted optional metadata as SQL NULL', async () => {
     const response = await prepare(requestFor({ articles: [minimal] }), sqlite.database)
     assert.equal(response.status, 200)
     const [stored] = sqlite.execute('SELECT * FROM articles;')
-    for (const field of ['original_title', 'summary', 'takeaway', 'content_potential', 'topic', 'type']) {
+    for (const field of ['original_title', 'summary', 'takeaway', 'content_potential', 'topic', 'type', 'original_url', 'original_url_provenance']) {
       assert.equal(stored[field], null, field)
     }
     assert.equal(stored.category, 'general')

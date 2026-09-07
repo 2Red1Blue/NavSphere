@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { spawn } from 'node:child_process'
 import test from 'node:test'
 import type { AddressInfo } from 'node:net'
@@ -59,6 +60,25 @@ const fallbackFixture: Article = {
   fulltext_publication_allowed: false,
 }
 
+const editorialPublication = JSON.parse(readFileSync(
+  new URL('../../tests/fixtures/editorial-publication-v1.json', import.meta.url), 'utf8',
+)).manifest.publication
+const editorialFixture: Article = {
+  ...fallbackFixture,
+  url_hash: editorialPublication.article_id,
+  url: editorialPublication.source.url,
+  original_url: editorialPublication.source.original_url,
+  original_url_provenance: editorialPublication.source.original_url_provenance,
+  editorial: { ...editorialPublication, revision: 1, published_at: '2026-09-04T00:00:00Z' },
+}
+const editorialWithFulltextFixture: Article = {
+  ...editorialFixture,
+  content: fulltextFixture.content,
+  content_format: 'markdown_v1',
+  content_quality: 'verified_fulltext',
+  fulltext_publication_allowed: true,
+}
+
 type Browser = {
   newPage(options?: { viewport?: { width: number; height: number } }): Promise<Page>
   close(): Promise<void>
@@ -70,11 +90,12 @@ type Page = {
   goto(url: string, options?: { waitUntil?: string }): Promise<unknown>
   reload(options?: { waitUntil?: string }): Promise<unknown>
   setViewportSize(size: { width: number; height: number }): Promise<void>
-  getByRole(role: string, options: { name: string | RegExp }): Locator
+  getByRole(role: string, options: { name: string | RegExp; exact?: boolean }): Locator
   getByText(text: string, options?: { exact?: boolean }): Locator
   locator(selector: string, options?: { hasText?: string | RegExp }): Locator
   waitForRequest(urlOrPredicate: string | ((request: Request) => boolean), options?: { timeout?: number }): Promise<Request>
   evaluate<T>(pageFunction: () => T): Promise<T>
+  screenshot(options: { path: string; fullPage: boolean }): Promise<unknown>
 }
 
 type Locator = {
@@ -162,10 +183,11 @@ test('reader production source preserves the local fixture acceptance contract',
   assert.match(source, /aria-label="文章目录"/)
   assert.match(source, /hidden w-56 shrink-0 self-start xl:block/)
   assert.match(source, /canRenderFullContent\(article\)/)
+  assert.match(source, /!editorial && rendersFullContent/)
   assert.match(source, /本站暂不展示完整原文/)
 })
 
-test('reader local fixture renders fulltext/fallback and responsive privacy behavior', async (context) => {
+test('reader local fixture renders fulltext/editorial/fallback and responsive privacy behavior', async (context) => {
   const playwright = loadOptionalPlaywright()
   if (!playwright) {
     context.skip('Browser acceptance skipped: Playwright is not installed; source contract test still ran.')
@@ -189,14 +211,16 @@ test('reader local fixture renders fulltext/fallback and responsive privacy beha
 
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
-    let fixtureMode: 'fulltext' | 'fallback' = 'fulltext'
+    let fixtureMode: 'fulltext' | 'fallback' | 'editorial' | 'editorial-with-fulltext' = 'fulltext'
     const thirdPartyRequests: string[] = []
 
     await page.route('**/api/feed/reader-fulltext-fixture', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: articleResponse(fixtureMode === 'fulltext' ? fulltextFixture : fallbackFixture),
+        body: articleResponse(fixtureMode === 'fulltext' ? fulltextFixture
+          : fixtureMode === 'editorial' ? editorialFixture
+            : fixtureMode === 'editorial-with-fulltext' ? editorialWithFulltextFixture : fallbackFixture),
       })
     })
     await page.route(IMAGE_URL, async (route) => {
@@ -250,6 +274,34 @@ test('reader local fixture renders fulltext/fallback and responsive privacy beha
     assert.equal(await page.locator('[aria-labelledby="reader-fallback-title"]').isVisible(), true)
     assert.equal(await page.locator('article .prose').count(), 0)
     assert.equal(await page.getByRole('button', { name: '加载原图' }).count(), 0)
+
+    fixtureMode = 'editorial'
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.locator('#editorial-brief-title').waitFor({ state: 'visible', timeout: 15_000 })
+    assert.equal(await page.getByRole('heading', { name: editorialPublication.brief.headline.text }).isVisible(), true)
+    assert.equal(await page.getByRole('heading', { name: '不确定性与局限' }).isVisible(), true)
+    assert.equal(await page.locator('[aria-labelledby="reader-fallback-title"]').count(), 0, 'editorial replaces the fallback region')
+    assert.equal(await page.getByRole('heading', { name: '本站暂不展示完整原文' }).count(), 0, 'editorial never shows the fallback title')
+    assert.equal(await page.locator('article .prose').count(), 0, 'editorial never unlocks original content')
+    assert.equal(await page.locator('nav[aria-label="文章目录"]').count(), 0, 'TOC only follows rendered original Markdown')
+    assert.equal(await page.getByRole('link', { name: '查看原文', exact: true }).getAttribute('href'), editorialPublication.source.original_url)
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true)
+    const screenshotDirectory = process.env.EDITORIAL_SCREENSHOT_DIR
+    if (screenshotDirectory) {
+      mkdirSync(screenshotDirectory, { recursive: true })
+      await page.screenshot({ path: join(screenshotDirectory, 'editorial-mobile.png'), fullPage: true })
+    }
+    await page.setViewportSize({ width: 1280, height: 900 })
+    assert.equal(await page.locator('#editorial-brief-title').isVisible(), true)
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true)
+    if (screenshotDirectory) await page.screenshot({ path: join(screenshotDirectory, 'editorial-desktop.png'), fullPage: true })
+
+    fixtureMode = 'editorial-with-fulltext'
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.locator('#editorial-brief-title').waitFor({ state: 'visible', timeout: 15_000 })
+    assert.equal(await page.locator('article .prose').count(), 0, 'editorial has priority over otherwise readable original Markdown')
+    assert.equal(await page.locator('nav[aria-label="文章目录"]').count(), 0, 'editorial does not create a TOC from hidden original Markdown')
+    assert.equal(await page.locator('[aria-labelledby="reader-fallback-title"]').count(), 0)
   } finally {
     await browser.close()
     server.kill('SIGTERM')

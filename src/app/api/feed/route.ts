@@ -6,6 +6,7 @@ import { getRequestContext } from '@cloudflare/next-on-pages'
 import { FEED_UPSERT_SQL, feedArticleBindings } from '@/lib/feed-ingest-sql'
 import {
   FEED_LIST_COLUMNS,
+  feedIngestOutcome,
   secureTokenEquals,
   validateFeedRequest,
   withFeedErrorBoundary,
@@ -146,12 +147,20 @@ async function handleIngest(request: Request, db: D1Database, apiKey?: string) {
     )
   )
 
-  const ingested = batchResults.filter((result) => result.success).length
-  if (ingested !== validArticles.length) {
+  const outcome = feedIngestOutcome(batchResults, validArticles.map((article) => article.url_hash))
+  if (outcome.status === 503) {
     return errorResponse('INGEST_FAILED', 'D1 did not confirm every article in the batch', 503)
   }
+  if (outcome.status === 409) {
+    return jsonResponse({
+      error: { code: 'INGEST_CONFLICT', message: 'Conflicting source identity or original evidence; conflicting rows were not modified' },
+      ingested: outcome.ingested,
+      conflicts: outcome.conflicts,
+      total: validArticles.length,
+    }, 409, { 'Cache-Control': 'no-store' })
+  }
 
-  return jsonResponse({ ingested, total: validArticles.length }, 201)
+  return jsonResponse({ ingested: outcome.ingested, total: validArticles.length }, 201)
 }
 
 export async function GET(request: Request) {

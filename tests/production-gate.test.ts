@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { readResponseBody, runCommandWithLimits, runProductionGate } from '../scripts/production-gate'
+import { EDITORIAL_CONTRACT_COLUMNS } from '../src/lib/editorial-schema'
 
 const migrationNames = [
   '000-create-legacy-base.sql',
@@ -12,6 +13,9 @@ const migrationNames = [
   '005-add-submission-rate-limits.sql',
   '006-add-content-contract.sql',
   '007-add-fulltext-revocation.sql',
+  '008-add-original-url.sql',
+  '009-add-content-archive.sql',
+  '010-add-article-editorials.sql',
 ]
 
 function wrangler(rows: Record<string, unknown>[]) {
@@ -51,6 +55,14 @@ test('production gate passes only when migrations, schema, health, feed and deta
     'content_source',
     'fulltext_publication_allowed',
     'fulltext_revoked_at',
+    'original_url',
+    'original_url_provenance',
+    'fulltext_control_version',
+    'content_archive_key',
+    'content_archive_sha256',
+    'content_archive_version',
+    'content_archive_bytes',
+    'content_archived_at',
   ]
   const result = await runProductionGate({
     baseUrl: 'https://navsphere.example.test',
@@ -62,7 +74,9 @@ test('production gate passes only when migrations, schema, health, feed and deta
         code: 0,
         stdout: query?.startsWith('SELECT id')
           ? wrangler(migrationNames.map((name, index) => ({ id: index + 1, name, applied_at: 'now' })))
-        : wrangler(columns.map((name) => ({ name }))),
+          : query?.includes('article_editorials')
+            ? wrangler(EDITORIAL_CONTRACT_COLUMNS.map((name) => ({ name })))
+            : wrangler(columns.map((name) => ({ name }))),
         stderr: '',
       }
     },
@@ -70,8 +84,8 @@ test('production gate passes only when migrations, schema, health, feed and deta
   })
 
   assert.equal(result.status, 'passed')
-  assert.deepEqual(result.checks.map((item) => item.status), ['passed', 'passed', 'passed', 'passed', 'passed'])
-  assert.equal(commands.length, 2)
+  assert.deepEqual(result.checks.map((item) => item.status), ['passed', 'passed', 'passed', 'passed', 'passed', 'passed'])
+  assert.equal(commands.length, 3)
   assert.ok(commands.every((args) => args.includes('--remote') && args.includes('--env') && args.includes('production')))
   assert.ok(commands.every((args) => args.at(-1)?.startsWith('SELECT')))
 })
@@ -97,7 +111,7 @@ test('production gate reports a failed readiness result without printing respons
   })
 
   assert.equal(result.status, 'failed')
-  assert.deepEqual(result.checks.map((item) => item.status), ['failed', 'failed', 'failed', 'failed', 'failed'])
+  assert.deepEqual(result.checks.map((item) => item.status), ['failed', 'failed', 'failed', 'failed', 'failed', 'failed'])
   assert.ok(result.checks.every((item) => !('body' in item)))
 })
 
@@ -148,7 +162,8 @@ test('production gate rejects malformed migration rows and mismatched detail pay
 test('command runner enforces timeout and output ceilings', async () => {
   const timeout = await runCommandWithLimits(process.execPath, ['-e', 'setTimeout(() => {}, 1000)'], 20)
   assert.equal(timeout.code, 124)
-  const oversized = await runCommandWithLimits(process.execPath, ['-e', "process.stdout.write('x'.repeat(200000))"], 1_000)
+  // Test the output ceiling, not whether Node starts within a second on a busy host.
+  const oversized = await runCommandWithLimits(process.execPath, ['-e', "process.stdout.write('x'.repeat(200000))"], 30_000)
   assert.equal(oversized.code, 1)
 })
 
@@ -177,6 +192,23 @@ test('wrangler success=false envelopes cannot satisfy migration readiness', asyn
   assert.equal(result.checks.find((item) => item.name === 'migrations')?.code, 'MIGRATION_INVALID_JSON')
 })
 
+test('existing article columns and healthy HTTP cannot hide a missing editorial schema', async () => {
+  const result = await runProductionGate({
+    baseUrl: 'https://navsphere.example.test', migrationNames,
+    commandRunner: async (_command, args) => ({
+      code: 0,
+      stdout: args.at(-1)?.startsWith('SELECT id')
+        ? wrangler(migrationNames.map((name, index) => ({ id: index + 1, name, applied_at: 'now' })))
+        : args.at(-1)?.includes('article_editorials')
+          ? wrangler([]) : wrangler(REQUIRED_COLUMNS_FIXTURE.map((name) => ({ name }))),
+      stderr: '',
+    }),
+    fetchImpl: healthyFetch(),
+  })
+  assert.equal(result.checks.find((item) => item.name === 'editorial-schema')?.code, 'EDITORIAL_CONTRACT_INCOMPLETE')
+  assert.equal(result.status, 'failed')
+})
+
 const REQUIRED_COLUMNS_FIXTURE = [
   'content_format',
   'content_quality',
@@ -188,4 +220,12 @@ const REQUIRED_COLUMNS_FIXTURE = [
   'content_source',
   'fulltext_publication_allowed',
   'fulltext_revoked_at',
+  'original_url',
+  'original_url_provenance',
+  'fulltext_control_version',
+  'content_archive_key',
+  'content_archive_sha256',
+  'content_archive_version',
+  'content_archive_bytes',
+  'content_archived_at',
 ]

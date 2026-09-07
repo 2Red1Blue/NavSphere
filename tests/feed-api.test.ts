@@ -16,6 +16,7 @@ import {
   REQUIRED_FEED_COLUMNS,
   handleHealthRequest,
 } from '../src/lib/health-check'
+import { EDITORIAL_CONTRACT_COLUMNS } from '../src/lib/editorial-schema'
 
 const approvedArticle = {
   url_hash: '0123456789abcdef',
@@ -127,7 +128,8 @@ test('health endpoint checks the Feed schema contract and fails degraded with 50
     prepare(query: string) {
       calls.push(query)
       return {
-        all: async <T>() => ({ results: allColumns.map((name) => ({ name })) as T[] }),
+        all: async <T>() => ({ results: (query.includes('article_editorials')
+          ? EDITORIAL_CONTRACT_COLUMNS : allColumns).map((name) => ({ name })) as T[] }),
         first: async <T>() => ({ approved: 7 } as T),
       }
     },
@@ -137,7 +139,7 @@ test('health endpoint checks the Feed schema contract and fails degraded with 50
   assert.deepEqual((await healthy.json()).checks, {
     database: 'ok', schema: 'ok', approvedArticles: 7,
   })
-  assert.equal(calls.length, 2)
+  assert.equal(calls.length, 3)
 
   const originalConsoleError = console.error
   console.error = () => undefined
@@ -160,7 +162,21 @@ test('health endpoint checks the Feed schema contract and fails degraded with 50
       database: 'ok', schema: 'incomplete',
     })
     assert.doesNotMatch(JSON.stringify(incompleteBody), /missingColumns|content/)
-    assert.equal(calls.length, 3, 'schema failure must skip the count query')
+    assert.equal(calls.length, 4, 'article schema failure must skip editorial and count queries')
+
+    const missingEditorial = {
+      prepare(query: string) {
+        return {
+          all: async () => ({ results: (query.includes('article_editorials')
+            ? EDITORIAL_CONTRACT_COLUMNS.filter((name) => name !== 'revision') : allColumns)
+            .map((name) => ({ name })) }),
+          first: async () => { assert.fail('missing editorial schema must skip the count query') },
+        }
+      },
+    } as unknown as D1Database
+    const missingEditorialResponse = await createHealthResponse(missingEditorial)
+    assert.equal(missingEditorialResponse.status, 503)
+    assert.deepEqual((await missingEditorialResponse.json()).checks, { database: 'ok', schema: 'incomplete' })
 
     const brokenDatabase = {
       prepare() {

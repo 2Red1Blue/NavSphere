@@ -1,4 +1,16 @@
 import type { Article } from '@/types/feed'
+import { isAihotUrl, validateOriginalUrl, validOriginalMetadata } from './source-provenance'
+
+/** Collection attribution remains unchanged; this only resolves outbound navigation. */
+export function getSourceLink(article: {
+  url: string
+  original_url?: unknown
+  original_url_provenance?: unknown
+}): { url: string; label: '查看原文' | 'AIHOT收录页' } | null {
+  if (validOriginalMetadata(article)) return { url: article.original_url, label: '查看原文' }
+  if (!validateOriginalUrl(article.url)) return null
+  return { url: article.url, label: isAihotUrl(article.url) ? 'AIHOT收录页' : '查看原文' }
+}
 
 export const INTERNAL_SCORE_MAX = 30
 export const DISPLAY_SCORE_MAX = 100

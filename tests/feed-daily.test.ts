@@ -16,6 +16,9 @@ function article(overrides: Partial<DailyArticle> = {}): DailyArticle {
     summary: 'Summary',
     takeaway: 'Why it matters',
     source: 'Official Blog',
+    url: 'https://example.com/source',
+    original_url: null,
+    original_url_provenance: null,
     category: 'AI工程技术',
     topic: 'AI product',
     type: 'tool',
@@ -73,4 +76,18 @@ test('daily API SQL is read-only, approval-filtered, and parameterized', () => {
   assert.ok((source.match(/approved_for_publication\s*=\s*1/g) || []).length >= 4)
   assert.match(source, /date\(datetime\(discovered_at, '\+8 hours'\)\) = \?/)
   assert.doesNotMatch(source, /\$\{date\}/)
+})
+
+test('daily projection retains source identity and original evidence without changing ranking', () => {
+  const selected = article({
+    url: 'https://aihot.virxact.com/news/item-123',
+    original_url: 'https://example.com/report',
+    original_url_provenance: 'aihot_api_v1',
+  })
+  const digest = buildDailyDigest('2026-08-31', [selected])
+  const [view] = dailySectionKeys.flatMap((section) => digest.sections[section])
+  assert.equal(view.url, selected.url)
+  assert.equal(view.original_url, selected.original_url)
+  assert.equal(view.original_url_provenance, selected.original_url_provenance)
+  assert.equal(view.score, selected.score)
 })
