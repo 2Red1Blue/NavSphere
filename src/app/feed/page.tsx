@@ -10,7 +10,11 @@ import { FeedSkeleton } from '@/components/feed/feed-skeleton'
 import { FeedEmpty } from '@/components/feed/feed-empty'
 import { FeedError } from '@/components/feed/feed-error'
 import { Button } from '@/registry/new-york/ui/button'
-import { ArrowUpRight, Menu, Search, X } from 'lucide-react'
+import { ArrowUpRight, Menu, Search, X, Rows3, AlignLeft } from 'lucide-react'
+import * as Dialog from '@radix-ui/react-dialog'
+import { FeedThemeToggle } from '@/components/feed/theme-toggle'
+import { TopicDiscovery } from '@/components/feed/topic-discovery'
+import { parseFeedTopics, type FeedTopic } from '@/lib/topic-explorer'
 
 const API_BASE = '/api/feed'
 const DEFAULT_LIMIT = 20
@@ -20,11 +24,15 @@ function FeedContent() {
   const router = useRouter()
   
   const [state, setState] = useState<FeedState>({ status: 'loading' })
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [compact, setCompact] = useState(false)
+  const searchRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const [allArticles, setAllArticles] = useState<Article[]>([])
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([])
   const [types, setTypes] = useState<{ name: string; count: number }[]>([])
+  const [topics, setTopics] = useState<FeedTopic[]>([])
   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_LIMIT, total: 0, totalPages: 0 })
   const [loadingMore, setLoadingMore] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -32,6 +40,7 @@ function FeedContent() {
 
   const featured = searchParams.get('featured') === 'true'
   const topic = searchParams.get('topic') || ''
+  const source = searchParams.get('source') || ''
   const selectedCategory = searchParams.get('category') || 'all'
   const selectedType = searchParams.get('type') || 'all'
 
@@ -42,12 +51,16 @@ function FeedContent() {
       abortRef.current = controller
 
       try {
-        if (!append) setState({ status: 'loading' })
+        if (!append) {
+          setState({ status: 'loading' })
+          setAllArticles([])
+        }
         else setLoadingMore(true)
 
         const params = new URLSearchParams({ page: String(pageNum), limit: String(DEFAULT_LIMIT) })
         if (featured) params.set('featured', 'true')
         if (topic) params.set('topic', topic)
+        if (source) params.set('source', source)
         if (selectedCategory !== 'all') params.set('category', selectedCategory)
         if (selectedType !== 'all') params.set('type', selectedType)
         if (searchQuery) params.set('q', searchQuery)
@@ -59,6 +72,7 @@ function FeedContent() {
         }
 
         const data: FeedListResponse = await res.json()
+        if (controller.signal.aborted) return
 
         if (append) {
           setAllArticles((prev) => [...prev, ...data.data])
@@ -67,6 +81,7 @@ function FeedContent() {
         }
         setCategories(data.categories || [])
         setTypes(data.types || [])
+        setTopics(parseFeedTopics(data.topics))
         setPagination(data.pagination)
         setPage(pageNum)
 
@@ -79,29 +94,41 @@ function FeedContent() {
         if ((err as Error).name === 'AbortError') return
         setState({ status: 'error', message: (err as Error).message })
       } finally {
-        setLoadingMore(false)
+        if (!controller.signal.aborted) setLoadingMore(false)
       }
     },
-    [featured, topic, selectedCategory, selectedType, searchQuery]
+    [featured, topic, source, selectedCategory, selectedType, searchQuery]
   )
 
   useEffect(() => {
-    fetchArticles(1)
+    void fetchArticles(1)
+    return () => abortRef.current?.abort()
   }, [fetchArticles])
 
   useEffect(() => {
-    if (!mobileMenuOpen) return
-    const previousOverflow = document.body.style.overflow
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileMenuOpen(false)
+    const timer = window.setTimeout(() => setSearchQuery(searchInput.trim()), 300)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
+
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey || target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return
+      event.preventDefault()
+      searchRef.current?.focus()
     }
-    document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', closeOnEscape)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [mobileMenuOpen])
+    window.addEventListener('keydown', focusSearch)
+    return () => window.removeEventListener('keydown', focusSearch)
+  }, [])
+
+  const changeFilter = (key: 'category' | 'type', value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (value === 'all') params.delete(key)
+    else params.set(key, value)
+    router.push(`/feed?${params.toString()}`, { scroll: false })
+    setMobileMenuOpen(false)
+  }
+
 
   const handleLoadMore = useCallback(() => {
     fetchArticles(page + 1, true)
@@ -109,157 +136,112 @@ function FeedContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchArticles(1)
+    if (searchQuery === searchInput.trim()) void fetchArticles(1)
+    else setSearchQuery(searchInput.trim())
   }
 
   const hasMore = pagination.page < pagination.totalPages
   const showContent = state.status === 'success' || allArticles.length > 0
-  const pageTitle = featured ? '本周精选' : topic ? topic : '今日信号'
+  const pageTitle = featured ? '精选' : topic ? topic : '最新动态'
   const pageNote = featured
-    ? '编辑部从近期内容中挑出的高密度读物。'
+    ? '经过筛选的 AI 新闻、研究与工具。'
     : topic
       ? `正在浏览「${topic}」相关的公开内容与独立编辑稿。`
-      : '从模型、产品与研究噪声里，留下值得继续读的部分。'
+      : 'AI 新闻、研究与工具，按时间更新。'
 
   return (
-    <div className="feed-paper min-h-screen selection:bg-orange-200/70 selection:text-stone-950 dark:selection:bg-orange-800/70 dark:selection:text-stone-50">
+    <Dialog.Root open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+    <div className="feed-paper min-h-screen selection:bg-emerald-200/70 selection:text-stone-950 dark:selection:bg-emerald-800/70 dark:selection:text-stone-50">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:p-3">跳至文章列表</a>
       <header className="feed-hairline sticky top-0 z-30 border-b bg-[hsl(var(--feed-paper)/0.94)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
-            <Button
+        <div className="mx-auto flex max-w-[76rem] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+            <Dialog.Trigger asChild><Button
               type="button"
               variant="ghost"
               size="icon"
               className="-ml-2 rounded-full lg:hidden"
-              onClick={() => setMobileMenuOpen((open) => !open)}
               aria-label={mobileMenuOpen ? '关闭栏目与筛选' : '打开栏目与筛选'}
               aria-expanded={mobileMenuOpen}
               aria-controls="feed-mobile-navigation"
             >
               <Menu className="h-5 w-5" />
-            </Button>
+            </Button></Dialog.Trigger>
 
-          <Link href="/feed" className="group mr-auto flex items-baseline gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-orange-600">
-            <span className="feed-display text-xl font-semibold tracking-[-0.04em] sm:text-2xl">信号志</span>
-            <span className="feed-kicker hidden group-hover:text-[hsl(var(--feed-ink))] sm:inline">NavSphere Signals</span>
+          <Link href="/feed" className="group mr-auto flex items-baseline gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]">
+            <span className="cyber-wordmark feed-display text-xl font-semibold tracking-[-0.035em]">NavSphere<span aria-hidden="true" className="cyber-wordmark-slash">{'//'}</span></span>
+            <span className="feed-kicker hidden group-hover:text-[hsl(var(--feed-ink))] sm:inline">AI 资讯</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 text-sm lg:flex" aria-label="Feed 主导航">
-            {[
-              ['/feed?featured=true', '精选'],
-              ['/feed/daily', '日报'],
-              ['/feed/hot', '热点'],
-              ['/feed/topics', '主题'],
-            ].map(([href, label]) => (
-              <Link key={href} href={href} className="feed-muted rounded-full px-3 py-1.5 transition-colors hover:bg-black/5 hover:text-[hsl(var(--feed-ink))] dark:hover:bg-white/5">
-                {label}
-              </Link>
-            ))}
-          </nav>
 
-            <form onSubmit={handleSearch} className="w-[min(15rem,42vw)] sm:w-64">
+
+            <form onSubmit={handleSearch} className="min-w-0 flex-1 sm:max-w-72">
               <div className="relative">
                 <Search className="feed-muted absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索信号"
+                  ref={searchRef}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="搜索文章 /"
                   aria-label="搜索文章"
-                  className="feed-hairline h-9 w-full rounded-full border bg-transparent pl-9 pr-4 text-sm outline-none transition-colors placeholder:text-[hsl(var(--feed-muted))] focus:border-[hsl(var(--feed-accent))] focus:ring-2 focus:ring-[hsl(var(--feed-accent)/0.16)]"
+                  className="feed-hairline h-10 w-full rounded-lg border bg-transparent pl-9 pr-4 text-sm outline-none transition-colors placeholder:text-[hsl(var(--feed-muted))] focus:border-[hsl(var(--feed-accent))] focus:ring-2 focus:ring-[hsl(var(--feed-accent)/0.16)]"
                 />
               </div>
             </form>
+          <FeedThemeToggle />
         </div>
       </header>
 
-      <section className="feed-hairline border-b">
-        <div className="mx-auto grid max-w-[90rem] gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end lg:px-8">
-          <div>
-            <p className="feed-kicker">Issue / {new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', timeZone: 'Asia/Shanghai' }).format(new Date())}</p>
-            <h1 className="feed-display mt-3 max-w-4xl text-5xl font-medium leading-[0.95] tracking-[-0.055em] text-balance sm:text-7xl">
-              {pageTitle}
-            </h1>
-          </div>
-          <div className="lg:pb-1">
-            <p className="max-w-md text-sm leading-7 text-[hsl(var(--feed-muted))] sm:text-base">{pageNote}</p>
-            <div className="feed-hairline mt-5 flex items-center justify-between border-t pt-3 text-xs tabular-nums text-[hsl(var(--feed-muted))]">
-              <span>{pagination.total ? `${pagination.total} 篇馆藏` : '正在整理馆藏'}</span>
-              <Link href="/feed/daily" className="group inline-flex items-center gap-1 font-semibold text-[hsl(var(--feed-ink))]">
-                阅读今日简报 <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <div className="mx-auto grid max-w-[90rem] gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12 lg:px-8 lg:py-12">
-          <SidebarNav 
-            categories={categories}
-            types={types}
-            selectedCategory={selectedCategory}
-            selectedType={selectedType}
-            onCategoryChange={(cat) => {
-              const params = new URLSearchParams(searchParams.toString())
-              if (cat === 'all') {
-                params.delete('category')
-              } else {
-                params.set('category', cat)
-              }
-              router.push(`/feed?${params.toString()}`)
-            }}
-            onTypeChange={(type) => {
-              const params = new URLSearchParams(searchParams.toString())
-              if (type === 'all') {
-                params.delete('type')
-              } else {
-                params.set('type', type)
-              }
-              router.push(`/feed?${params.toString()}`)
-            }}
+
+      <div className="mx-auto grid max-w-[76rem] gap-8 px-4 py-7 sm:px-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10 lg:px-8 lg:py-8">
+          <SidebarNav
+            categories={categories} types={types}
+            selectedCategory={selectedCategory} selectedType={selectedType}
+            onCategoryChange={(value) => changeFilter('category', value)}
+            onTypeChange={(value) => changeFilter('type', value)}
           />
-
-          {mobileMenuOpen && (
-            <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="栏目与筛选">
-              <button type="button" className="fixed inset-0 cursor-default bg-stone-950/45 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} aria-label="关闭栏目与筛选" />
-              <div id="feed-mobile-navigation" className="feed-drawer feed-paper fixed bottom-0 left-0 top-0 w-[min(21rem,88vw)] overflow-y-auto border-r border-[hsl(var(--feed-line))] p-4 shadow-2xl">
-                <div className="mb-4 flex items-center justify-between px-2">
-                  <span className="feed-display text-xl font-semibold">阅览索引</span>
-                  <Button type="button" autoFocus variant="ghost" size="icon" className="rounded-full" onClick={() => setMobileMenuOpen(false)} aria-label="关闭栏目与筛选">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-                <SidebarNav 
-                  categories={categories}
-                  types={types}
-                  selectedCategory={selectedCategory}
-                  selectedType={selectedType}
-                  onCategoryChange={(cat) => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    if (cat === 'all') {
-                      params.delete('category')
-                    } else {
-                      params.set('category', cat)
-                    }
-                    router.push(`/feed?${params.toString()}`)
-                  }}
-                  onTypeChange={(type) => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    if (type === 'all') {
-                      params.delete('type')
-                    } else {
-                      params.set('type', type)
-                    }
-                    router.push(`/feed?${params.toString()}`)
-                  }}
-                />
+          <Dialog.Portal>
+            <Dialog.Overlay className="feed-overlay fixed inset-0 z-40 bg-slate-950/40" />
+            <Dialog.Content id="feed-mobile-navigation" aria-describedby={undefined} className="feed-drawer feed-paper fixed inset-y-0 left-0 z-50 w-[min(21rem,88vw)] overflow-y-auto border-r border-[hsl(var(--feed-line))] p-5 shadow-xl">
+              <div className="mb-5 flex items-center justify-between">
+                <Dialog.Title className="text-lg font-semibold">浏览与筛选</Dialog.Title>
+                <Dialog.Close className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]" aria-label="关闭栏目与筛选"><X className="h-5 w-5" /></Dialog.Close>
               </div>
-            </div>
-          )}
+              <SidebarNav categories={categories} types={types} selectedCategory={selectedCategory} selectedType={selectedType}
+                onCategoryChange={(value) => changeFilter('category', value)}
+                onTypeChange={(value) => changeFilter('type', value)} />
+            </Dialog.Content>
+          </Dialog.Portal>
 
           <main className="min-w-0" id="main-content">
+            <div className="cyber-page-intro mb-7 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h1 className="feed-display text-[28px] font-semibold leading-tight tracking-[-0.025em] sm:text-[32px]">{pageTitle}</h1>
+                <p className="feed-muted mt-2 text-sm leading-6">{pageNote}</p>
+              </div>
+              <Link href="/feed/daily" className="feed-accent inline-flex items-center gap-1.5 rounded-lg border border-[hsl(var(--feed-accent)/.2)] bg-[hsl(var(--feed-surface))] px-3 py-2 text-xs font-medium">
+                阅读日报 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            </div>
+            {!featured && !topic && !source && selectedCategory === 'all' && selectedType === 'all' && !searchQuery && <TopicDiscovery topics={topics} />}
+            <div className="feed-hairline mb-5 flex items-center justify-between gap-3 border-b pb-4">
+              <p className="feed-muted text-xs" role="status" aria-live="polite">{state.status === 'loading' ? '正在更新…' : `${pagination.total} 篇文章`}</p>
+              <div className="relative flex rounded-lg bg-[hsl(var(--feed-ink)/.05)] p-1" role="group" aria-label="阅读密度">
+                <span aria-hidden="true" className="feed-density-indicator absolute inset-y-1 left-1 w-[calc((100%-8px)/2)] rounded-md bg-[hsl(var(--feed-surface))] shadow-sm" style={{ transform: compact ? 'translateX(100%)' : 'translateX(0)' }} />
+                {[{ value: false, label: '阅读', Icon: AlignLeft }, { value: true, label: '速览', Icon: Rows3 }].map(({ value, label, Icon }) => (
+                  <button key={label} type="button" aria-pressed={compact === value} onClick={() => setCompact(value)} className="relative z-10 inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]"><Icon className="h-3.5 w-3.5" aria-hidden="true" />{label}</button>
+                ))}
+              </div>
+            </div>
+            {(selectedCategory !== 'all' || selectedType !== 'all') && <div className="mb-4 flex flex-wrap gap-2" aria-label="已选筛选">
+              {selectedCategory !== 'all' && <button className="feed-filter-chip" onClick={() => changeFilter('category', 'all')}>清除领域筛选 <X className="h-3 w-3" aria-hidden="true" /></button>}
+              {selectedType !== 'all' && <button className="feed-filter-chip" onClick={() => changeFilter('type', 'all')}>清除类型筛选 <X className="h-3 w-3" aria-hidden="true" /></button>}
+            </div>}
+            {state.status === 'error' && allArticles.length > 0 && <FeedError message={state.message} onRetry={handleLoadMore} />}
             {showContent ? (
               <>
-                <TimelineList articles={allArticles} />
+                <TimelineList articles={allArticles} compact={compact} />
                 {hasMore && (
                   <div className="feed-hairline mt-10 border-t pt-8 text-center">
                     <Button
@@ -286,12 +268,13 @@ function FeedContent() {
           </main>
       </div>
     </div>
+    </Dialog.Root>
   )
 }
 
 export default function FeedPage() {
   return (
-    <Suspense fallback={<div className="feed-paper min-h-screen px-4 py-16 sm:px-6"><div className="mx-auto max-w-[90rem]"><FeedSkeleton /></div></div>}>
+    <Suspense fallback={<div className="feed-paper min-h-screen px-4 py-16 sm:px-6"><div className="mx-auto max-w-[76rem]"><FeedSkeleton /></div></div>}>
       <FeedContent />
     </Suspense>
   )

@@ -13,9 +13,9 @@ export function FeedEmpty({ className }: EmptyStateProps) {
       <div className="feed-accent mb-5">
         <Newspaper className="h-9 w-9" />
       </div>
-      <h3 className="feed-display text-3xl font-medium">今天的版面还在整理</h3>
+      <h3 className="feed-display text-xl font-semibold">暂无相关文章</h3>
       <p className="feed-muted mt-3 max-w-xs text-sm leading-6">
-        新信号通过采集、写作与审校后，会自动进入这里。
+        可以换个关键词或筛选条件，稍后再来查看新内容。
       </p>
     </div>
   )

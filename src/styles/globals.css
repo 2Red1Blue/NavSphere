@@ -284,42 +284,59 @@
    scoped so the navigation/admin product retains the existing design system. */
 @layer components {
   .feed-paper {
-    --feed-paper: 43 38% 96%;
-    --feed-ink: 154 23% 12%;
-    --feed-muted: 151 8% 42%;
-    --feed-line: 40 18% 82%;
-    --feed-accent: 12 72% 48%;
+    --feed-paper: 224 25% 5%;
+    --feed-surface: 226 22% 9%;
+    --feed-ink: 210 35% 93%;
+    --feed-muted: 225 21% 69%;
+    --feed-line: 233 25% 25%;
+    --feed-accent: 202 46% 78%;
+    --feed-secondary: 269 34% 77%;
+    --background: var(--feed-paper);
+    --foreground: var(--feed-ink);
+    --muted-foreground: var(--feed-muted);
+    --muted: var(--feed-line);
+    --border: var(--feed-line);
+    --primary: var(--feed-accent);
+    --primary-foreground: var(--feed-paper);
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", var(--font-inter), sans-serif;
     color: hsl(var(--feed-ink));
     background-color: hsl(var(--feed-paper));
-    background-image:
-      radial-gradient(circle at 14% 8%, hsl(42 58% 91% / 0.62), transparent 30rem),
-      linear-gradient(90deg, hsl(var(--feed-line) / 0.16) 1px, transparent 1px);
-    background-size: auto, 5rem 100%;
   }
 
-  .dark .feed-paper {
-    --feed-paper: 150 16% 8%;
-    --feed-ink: 43 35% 93%;
-    --feed-muted: 45 9% 63%;
-    --feed-line: 151 9% 24%;
-    --feed-accent: 18 78% 61%;
-    background-image:
-      radial-gradient(circle at 14% 8%, hsl(151 20% 14% / 0.72), transparent 30rem),
-      linear-gradient(90deg, hsl(var(--feed-line) / 0.18) 1px, transparent 1px);
+  :root[data-feed-theme="light"] .feed-paper {
+    --feed-paper: 230 28% 97%;
+    --feed-surface: 230 35% 99%;
+    --feed-ink: 234 35% 16%;
+    --feed-muted: 230 16% 42%;
+    --feed-line: 235 22% 81%;
+    --feed-accent: 231 35% 40%;
+    --feed-secondary: 269 32% 42%;
   }
 
   .feed-display {
-    font-family: var(--font-newsreader), "Noto Serif SC", "Source Han Serif SC",
-      "Songti SC", STSong, serif;
-    font-optical-sizing: auto;
+    font-family: inherit;
+  }
+
+  .feed-paper .prose {
+    --tw-prose-body: hsl(var(--feed-ink));
+    --tw-prose-headings: hsl(var(--feed-ink));
+    --tw-prose-links: hsl(var(--feed-accent));
+    --tw-prose-bold: hsl(var(--feed-ink));
+    --tw-prose-counters: hsl(var(--feed-muted));
+    --tw-prose-bullets: hsl(var(--feed-muted));
+    --tw-prose-quotes: hsl(var(--feed-ink));
+    --tw-prose-quote-borders: hsl(var(--feed-line));
+    --tw-prose-code: hsl(var(--feed-ink));
+    --tw-prose-hr: hsl(var(--feed-line));
+    --tw-prose-th-borders: hsl(var(--feed-line));
+    --tw-prose-td-borders: hsl(var(--feed-line));
   }
 
   .feed-kicker {
     color: hsl(var(--feed-accent));
-    font-size: 0.6875rem;
-    font-weight: 750;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
   }
 
   .feed-hairline {
@@ -341,6 +358,187 @@
   .feed-drawer {
     animation: feed-drawer-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+
+  .feed-story {
+    animation: feed-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    transition: background-color 160ms ease-out;
+  }
+
+  .feed-story:hover, .feed-story:focus-within {
+    background-color: hsl(var(--feed-accent) / .025);
+  }
+
+  .feed-preview, .feed-overlay {
+    animation: feed-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .feed-density-indicator {
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .feed-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 2.25rem;
+    padding: .375rem .75rem;
+    border-radius: .5rem;
+    background: hsl(var(--feed-accent) / .08);
+    color: hsl(var(--feed-accent));
+    font-size: .75rem;
+  }
+
+  /* Cyber effects stay on decorative edges, never on the article body. */
+  .feed-paper > header {
+    position: relative;
+    box-shadow: 0 1px 20px hsl(var(--feed-accent) / .04);
+  }
+
+  .feed-paper > header::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 4%, hsl(var(--feed-accent) / .7) 30%, hsl(var(--feed-secondary) / .65) 70%, transparent 96%);
+    pointer-events: none;
+  }
+
+  .cyber-wordmark {
+    color: hsl(var(--feed-ink));
+    text-shadow: none;
+  }
+
+  .cyber-wordmark-slash {
+    margin-left: .3rem;
+    color: hsl(var(--feed-accent));
+    font-weight: 400;
+    letter-spacing: -.16em;
+  }
+
+  .cyber-wordmark:hover { color: hsl(var(--feed-accent)); }
+
+  .cyber-page-intro {
+    position: relative;
+    overflow: hidden;
+    padding: 1.25rem 0 1rem;
+    border-top: 1px solid hsl(var(--feed-line));
+  }
+
+  .cyber-page-intro::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100px;
+    height: 7px;
+    background: repeating-linear-gradient(120deg, hsl(var(--feed-secondary) / .65) 0 2px, transparent 2px 7px);
+    pointer-events: none;
+  }
+
+  .cyber-page-intro::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, hsl(var(--feed-accent)), transparent);
+    box-shadow: 0 0 12px hsl(var(--feed-accent) / .55);
+    animation: cyber-scan 7s linear infinite;
+    pointer-events: none;
+  }
+
+  .cyber-panel {
+    position: relative;
+    border-radius: 4px;
+    box-shadow: inset 0 1px hsl(var(--feed-accent) / .08), 0 12px 36px hsl(235 60% 2% / .12);
+  }
+
+  .cyber-panel::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(45deg, transparent 46%, hsl(var(--feed-secondary) / .8) 49% 53%, transparent 56%);
+    pointer-events: none;
+  }
+
+  .feed-story { position: relative; overflow: hidden; }
+
+  .feed-story::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 1rem auto 1rem 0;
+    width: 2px;
+    background: hsl(var(--feed-accent));
+    box-shadow: 0 0 12px hsl(var(--feed-accent) / .65);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 240ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .feed-story:hover::before, .feed-story:focus-within::before { transform: scaleY(1); }
+
+  .feed-paper a[aria-current="page"] {
+    color: hsl(var(--feed-accent));
+    background: hsl(var(--feed-accent) / .10);
+    border-radius: 2px 10px 2px 2px;
+    box-shadow: inset 2px 0 hsl(var(--feed-accent)), inset 0 0 0 1px hsl(var(--feed-accent) / .25), 0 0 20px hsl(var(--feed-accent) / .04);
+  }
+
+  .feed-paper input:focus-visible {
+    box-shadow: 0 0 18px hsl(var(--feed-accent) / .13);
+  }
+
+  .cyber-effects-control {
+    position: fixed;
+    z-index: 35;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 36px;
+    padding: .5rem .75rem;
+    border: 1px solid hsl(177 90% 65% / .35);
+    border-radius: 2px 8px 2px 2px;
+    color: hsl(177 90% 75%);
+    background: hsl(234 38% 8% / .95);
+    font-size: 11px;
+    letter-spacing: .05em;
+  }
+
+  .cyber-effects-control:focus-visible { outline: 2px solid hsl(177 90% 65%); outline-offset: 3px; }
+  .cyber-effects-control:disabled { cursor: default; opacity: .7; }
+}
+
+@keyframes cyber-scan {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(460%); }
+}
+
+@keyframes cyber-offset {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(1px); }
+  50% { transform: translateX(-1px); }
+  75% { transform: translateX(.5px); }
+}
+
+:root[data-feed-effects="off"] .feed-paper *,
+:root[data-feed-effects="off"] .feed-paper *::before,
+:root[data-feed-effects="off"] .feed-paper *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+:root[data-feed-effects="off"] .cyber-page-intro::after { opacity: 0; }
+
+@keyframes feed-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes feed-drawer-in {
@@ -349,5 +547,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feed-drawer { animation: none; }
+  .feed-paper *, .feed-paper *::before, .feed-paper *::after, .feed-overlay {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .cyber-page-intro::after { display: none; }
 }

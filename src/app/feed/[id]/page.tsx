@@ -458,12 +458,12 @@ export default function FeedDetailPage() {
       <div className="feed-accent-bg fixed left-0 top-0 z-50 h-0.5" style={{ width: `${readingProgress}%` }} aria-hidden="true" />
 
       <header className="feed-hairline border-b">
-        <div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[76rem] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/feed" className="group inline-flex items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1 motion-reduce:transform-none" />
-            <span className="feed-display text-xl font-semibold">信号志</span>
+            <span className="feed-display text-xl font-semibold">NavSphere</span>
           </Link>
-          <span className="feed-kicker hidden sm:block">NavSphere / Intelligence Reader</span>
+          <span className="feed-kicker hidden sm:block">AI 资讯</span>
           <button type="button" onClick={handleCopy} className="feed-muted inline-flex items-center gap-2 rounded-full border border-[hsl(var(--feed-line))] px-3 py-1.5 text-xs transition-colors hover:text-[hsl(var(--feed-ink))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]" aria-label="复制链接" title="复制链接">
             {copied ? <Check className="h-3.5 w-3.5 feed-accent" /> : <Copy className="h-3.5 w-3.5" />}
             {copied ? '已复制' : '分享'}
@@ -473,16 +473,16 @@ export default function FeedDetailPage() {
 
       <article>
         <header className="feed-hairline border-b">
-          <div className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <div className="mx-auto max-w-[76rem] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
             <div className="mb-7 flex flex-wrap items-center gap-x-3 gap-y-2">
               <span className="feed-accent inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em]"><Star className="h-3.5 w-3.5 fill-current" /> {displayScore}/100 · {scoreTier.label}</span>
               <span className="feed-muted">/</span>
               <span className="feed-kicker !text-[hsl(var(--feed-muted))]">{domainLabel}{typeInfo ? ` · ${typeInfo.label}` : ''}</span>
             </div>
-            <h1 className="feed-display max-w-6xl text-balance text-[clamp(3rem,7.4vw,7.7rem)] font-medium leading-[0.91] tracking-[-0.06em]">
+            <h1 className="feed-display max-w-4xl text-[28px] font-semibold leading-[1.4] tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[36px] lg:text-[40px]">
               {article.title}
             </h1>
-            <div className="feed-muted mt-9 flex flex-wrap items-center gap-2 text-sm">
+            <div className="feed-muted mt-5 flex flex-wrap items-center gap-2 text-sm">
               <span className="font-semibold text-[hsl(var(--feed-ink))]">{article.source}</span>
               <span aria-hidden="true">·</span><span>{sourceType.label}</span>
               {article.published_at && <><span aria-hidden="true">·</span><time dateTime={article.published_at}>{formatDate(article.published_at)}</time></>}
@@ -490,7 +490,7 @@ export default function FeedDetailPage() {
           </div>
         </header>
 
-        <div className="mx-auto grid max-w-[90rem] gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-16 xl:gap-20">
+        <div className="mx-auto grid max-w-[76rem] gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-10 xl:gap-12">
           <main className="min-w-0 max-w-[76ch]" id="main-content">
             {/* Editorials take the body slot; original Markdown is shown only otherwise. */}
             {editorial ? (
@@ -506,31 +506,38 @@ export default function FeedDetailPage() {
                 </div>
               </section>
             ) : (
-              <section className="feed-hairline mb-12 border-y py-10" aria-labelledby="reader-fallback-title">
+              <div className="mb-12">
+                {(article.summary || article.takeaway) && <section className="mb-8" aria-label="内容导读">
+                  <h2 className="feed-kicker mb-5">内容导读</h2>
+                  {article.summary && <div className="space-y-3 text-base leading-8">{article.summary.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>}
+                  {article.takeaway && <p className="mt-6 rounded-lg bg-[hsl(var(--feed-accent)/.06)] p-5 text-sm leading-7"><span className="feed-accent mr-2 font-semibold">推荐理由</span>{article.takeaway}</p>}
+                </section>}
+              <section className="feed-hairline border-t pt-6" aria-labelledby="reader-fallback-title">
                 <p className="feed-kicker mb-4">内容状态</p>
-                <h2 id="reader-fallback-title" className="feed-display text-4xl font-medium tracking-[-0.035em]">本站暂不展示完整原文</h2>
-                <p className="feed-muted mt-5 max-w-[60ch] text-base leading-8">
+                <h2 id="reader-fallback-title" className="feed-display text-base font-semibold leading-snug">本站暂不展示完整原文</h2>
+                <p className="feed-muted mt-3 max-w-[60ch] text-sm leading-7">
                   当前条目仅提供编辑导读与推荐理由。完整原文的格式、质量与公开许可尚未同时通过验证。
                   {sourceLink?.label === 'AIHOT收录页' ? '尚未核验上游原文链接，可前往 AIHOT 收录页查看来源线索。' : sourceLink ? '可通过来源链接继续阅读。' : '当前没有可安全打开的来源链接。'}
                 </p>
               </section>
+              </div>
             )}
           </main>
 
           <aside className="min-w-0 lg:order-none" aria-label="编辑注与文章信息">
             <div className="space-y-8 lg:sticky lg:top-8">
-              {(article.summary || article.takeaway) && (
+              {(editorial || readerContent) && (article.summary || article.takeaway) && (
                 <section className="feed-hairline border-t pt-4">
-                  <h2 className="feed-kicker mb-4">Editor&apos;s note</h2>
+                  <h2 className="feed-kicker mb-4">内容导读</h2>
                   {article.summary && <div className="feed-muted space-y-2 text-sm leading-7">{article.summary.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>}
                   {article.takeaway && <p className="mt-5 border-l-2 border-[hsl(var(--feed-accent))] pl-4 text-sm font-semibold leading-7">{article.takeaway}</p>}
                 </section>
               )}
 
               <section className="feed-hairline border-t pt-4">
-                <h2 className="feed-kicker mb-5">Signal index</h2>
+                <h2 className="feed-kicker mb-5">系统评分</h2>
                 <div className="space-y-4">
-                  <ScoreBar icon={Sparkles} label="信号密度" value={article.signal} max={10} color="text-[hsl(var(--feed-accent))]" />
+                  <ScoreBar icon={Sparkles} label="信息密度" value={article.signal} max={10} color="text-[hsl(var(--feed-accent))]" />
                   <ScoreBar icon={Lightbulb} label="新颖度" value={article.novelty} max={10} color="text-[hsl(var(--feed-accent))]" />
                   <ScoreBar icon={Target} label="实用性" value={article.usefulness} max={10} color="text-[hsl(var(--feed-accent))]" />
                 </div>

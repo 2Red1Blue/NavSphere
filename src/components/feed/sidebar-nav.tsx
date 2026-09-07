@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { useId } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
   BookOpen,
   CalendarDays,
@@ -37,15 +39,15 @@ const TYPE_CONFIG: Record<string, { icon: LucideIcon; label: string }> = {
 
 const NAV_ITEMS = [
   { href: '/feed?featured=true', icon: Sparkles, label: '精选' },
-  { href: '/feed', icon: List, label: '全部 AI 动态' },
+  { href: '/feed', icon: List, label: '最新动态' },
   { href: '/feed/hot', icon: Flame, label: '热点榜' },
-  { href: '/feed/daily', icon: CalendarDays, label: 'AI 日报' },
-  { href: '/feed#topics', icon: Hash, label: '主题' },
+  { href: '/feed/daily', icon: CalendarDays, label: '日报' },
+  { href: '/feed/topics', icon: Hash, label: '专题' },
 ] as const
 
 const filterClass = (selected: boolean) =>
-  `group w-full flex items-center justify-between border-l px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none ${
-    selected ? 'border-[hsl(var(--feed-accent))] font-semibold text-[hsl(var(--feed-ink))]' : 'border-transparent text-[hsl(var(--feed-muted))] hover:border-[hsl(var(--feed-line))] hover:text-[hsl(var(--feed-ink))]'
+  `group w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none ${
+    selected ? 'bg-[hsl(var(--feed-accent)/.08)] font-semibold text-[hsl(var(--feed-accent))]' : 'text-[hsl(var(--feed-muted))] hover:bg-[hsl(var(--feed-ink)/.04)] hover:text-[hsl(var(--feed-ink))]'
   }`
 
 export default function SidebarNav({
@@ -56,19 +58,24 @@ export default function SidebarNav({
   onCategoryChange,
   onTypeChange,
 }: SidebarNavProps) {
+  const headingId = useId()
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const activeHref = pathname === '/feed' && params.get('featured') === 'true' ? '/feed?featured=true' : pathname
   return (
     <aside className="hidden flex-shrink-0 lg:block [.fixed_&]:block" aria-label="Feed 导航与筛选">
-      <nav className="sticky top-20 space-y-8 p-4 lg:p-0">
-        <div className="feed-hairline border-t pt-3" aria-label="内容导航">
-          <p className="feed-kicker mb-3 px-3">阅览索引</p>
+      <nav className="sticky top-24 space-y-7 p-1 lg:p-0">
+        <div className="space-y-1" aria-label="内容导航">
+          <p className="feed-muted mb-3 px-3 text-xs font-medium">浏览与筛选</p>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="group flex items-center justify-between border-b border-[hsl(var(--feed-line)/.62)] px-3 py-2.5 text-sm text-[hsl(var(--feed-muted))] outline-none transition-colors hover:text-[hsl(var(--feed-ink))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none"
+              aria-current={activeHref === item.href ? 'page' : undefined}
+              className={`group flex items-center gap-3 px-3 py-2.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none ${activeHref === item.href ? 'cyber-nav-active font-medium' : 'feed-muted rounded-lg hover:bg-[hsl(var(--feed-ink)/.04)]'}`}
             >
+              <item.icon className="h-4 w-4" aria-hidden="true" />
               <span>{item.label}</span>
-              <item.icon className="h-3.5 w-3.5 transition-transform group-hover:rotate-[-8deg] motion-reduce:transform-none" aria-hidden="true" />
             </Link>
           ))}
           <Link
@@ -81,8 +88,8 @@ export default function SidebarNav({
         </div>
 
         {categories.length > 0 && (
-          <section aria-labelledby="category-filter-heading" className="space-y-2">
-            <h2 id="category-filter-heading" className="feed-kicker px-3">
+          <section aria-labelledby={`${headingId}-category`} className="space-y-2">
+            <h2 id={`${headingId}-category`} className="feed-kicker px-3">
               领域
             </h2>
             <div className="space-y-1">
@@ -106,9 +113,9 @@ export default function SidebarNav({
         )}
 
         {types.length > 0 && (
-          <section id="topics" aria-labelledby="type-filter-heading" className="scroll-mt-24 space-y-2">
-            <h2 id="type-filter-heading" className="feed-kicker px-3">
-              主题类型
+          <section aria-labelledby={`${headingId}-type`} className="scroll-mt-24 space-y-2">
+            <h2 id={`${headingId}-type`} className="feed-kicker px-3">
+              内容类型
             </h2>
             <div className="space-y-1">
               <button type="button" onClick={() => onTypeChange?.('all')} className={filterClass(selectedType === 'all')}>

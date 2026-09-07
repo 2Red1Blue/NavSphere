@@ -79,7 +79,7 @@ function Section({ meta, articles }: { meta: (typeof SECTION_META)[number]; arti
                   <span aria-hidden="true">·</span>
                   <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">AI {article.displayScore}</span>
                 </div>
-                <h3 className="feed-display mt-2 text-2xl font-medium leading-snug tracking-[-0.025em] sm:text-3xl">
+                <h3 className="feed-display mt-2 text-xl font-semibold leading-relaxed">
                   <Link
                     href={`/feed/${article.url_hash}`}
                     className="decoration-[hsl(var(--feed-accent)/.5)] underline-offset-4 transition-colors hover:text-[hsl(var(--feed-accent))] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] focus-visible:ring-offset-4"
@@ -179,7 +179,7 @@ export default function DailyDetailPage() {
         <article>
           <header className="pb-10 sm:pb-12">
             <p className="feed-kicker">AI Daily · 第 {digest.issue} 期</p>
-            <h1 className="feed-display mt-4 text-5xl font-medium tracking-[-0.045em] sm:text-7xl">{formatDate(digest.date)}</h1>
+            <h1 className="feed-display mt-4 text-[28px] font-semibold leading-tight sm:text-[36px]">{formatDate(digest.date)}</h1>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" className="h-4 w-4" />{digest.total} 篇精选</span>
               <span className="inline-flex items-center gap-2"><Clock3 aria-hidden="true" className="h-4 w-4" />预计阅读 {digest.estimatedReadMinutes} 分钟</span>

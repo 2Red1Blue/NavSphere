@@ -4,9 +4,10 @@ import type { Article } from '@/types/feed'
 
 interface TimelineListProps {
   articles: Article[]
+  compact?: boolean
 }
 
-export default function TimelineList({ articles }: TimelineListProps) {
+export default function TimelineList({ articles, compact = false }: TimelineListProps) {
   if (articles.length === 0) {
     return (
       <div className="border-y border-border py-12 text-center text-sm text-muted-foreground">
@@ -16,33 +17,25 @@ export default function TimelineList({ articles }: TimelineListProps) {
   }
 
   const groups = groupArticlesByShanghaiDate(articles)
-  let articleIndex = 0
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-7">
       {groups.map((group) => {
         const headingId = `feed-date-${group.dateKey}`
         return (
           <section key={group.dateKey} aria-labelledby={headingId}>
-            <div className="feed-hairline mb-1 flex items-baseline justify-between gap-3 border-b pb-3">
-              <h2 id={headingId} className="feed-kicker">
+            <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+              <h2 id={headingId} className="text-sm font-semibold">
                 <time dateTime={group.dateKey === 'unknown' ? undefined : group.dateKey}>
                   {group.label}
                 </time>
               </h2>
               <span className="feed-muted text-xs tabular-nums">
-                {group.articles.length} 个信号
+                {group.articles.length} 篇
               </span>
             </div>
-            <div className="grid md:grid-cols-2 md:gap-x-9">
-              {group.articles.map((article) => {
-                const index = articleIndex++
-                return (
-                  <div key={article.url_hash} className={index === 0 ? 'md:col-span-2' : ''}>
-                    <TimelineCard article={article} index={index} variant={index === 0 ? 'lead' : 'standard'} />
-                  </div>
-                )
-              })}
+            <div className="cyber-panel feed-hairline overflow-hidden border bg-[hsl(var(--feed-surface))]">
+              {group.articles.map((article, index) => <TimelineCard key={article.url_hash} article={article} compact={compact} index={index} />)}
             </div>
           </section>
         )

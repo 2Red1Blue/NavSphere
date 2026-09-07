@@ -36,13 +36,13 @@ export function EditorialBrief({ editorial }: { editorial: PublicEditorial }) {
   return (
     <section className="mb-12" aria-labelledby="editorial-brief-title">
       <div className="feed-hairline mb-8 flex items-center justify-between border-y py-3">
-        <p className="feed-kicker">本站整理 / Writer Agent 成稿 · 独立新闻短稿</p>
-        <p className="feed-muted text-xs tabular-nums">Revision {editorial.revision}</p>
+        <p className="feed-kicker">本站整理 · 独立新闻短稿</p>
+        <p className="feed-muted text-xs tabular-nums">第 {editorial.revision} 版</p>
       </div>
-      <h2 id="editorial-brief-title" className="feed-display text-balance text-4xl font-medium leading-[1.04] tracking-[-0.04em] sm:text-5xl">
+      <h2 id="editorial-brief-title" className="feed-display text-2xl font-semibold leading-[1.5] tracking-[-0.015em]">
         <CitedText claim={brief.headline} evidence={evidence} />
       </h2>
-      <p className="feed-display mt-8 border-l-2 border-[hsl(var(--feed-accent))] pl-5 text-xl leading-9 text-[hsl(var(--feed-ink)/.82)] sm:text-2xl sm:leading-10">
+      <p className="feed-display mt-8 border-l-2 border-[hsl(var(--feed-accent))] pl-5 text-lg leading-8 text-[hsl(var(--feed-ink)/.82)]">
         <CitedText claim={brief.lead} evidence={evidence} />
       </p>
       <h3 className="feed-kicker mb-4 mt-12">材料中的事实与主张</h3>

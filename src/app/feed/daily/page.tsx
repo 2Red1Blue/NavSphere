@@ -51,16 +51,16 @@ export default function DailyArchivePage() {
 
   return (
     <div className="feed-paper min-h-screen">
-      <FeedMasthead section="Daily / 每日简报" />
+      <FeedMasthead section="日报" />
 
-      <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <main className="mx-auto max-w-[76rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-16">
           <div>
             <div className="mb-9 max-w-2xl">
               <p className="feed-kicker mb-3">
-                Daily intelligence brief
+                每日精选
               </p>
-              <h1 className="feed-display text-6xl font-medium tracking-[-0.055em] sm:text-8xl">AI 每日简报</h1>
+              <h1 className="feed-display text-[28px] font-semibold leading-tight sm:text-[32px]">AI 每日简报</h1>
               <p className="feed-muted mt-5 max-w-xl text-sm leading-7 sm:text-base">
                 每天不超过 8 条公开精选，按模型、产品、行业与技巧观点整理。约三分钟，先看结论，再决定深入阅读什么。
               </p>

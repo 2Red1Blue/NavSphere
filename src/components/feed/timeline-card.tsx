@@ -1,92 +1,57 @@
-import Link from 'next/link'
-import { ArrowRight, ArrowUpRight, Sparkles } from 'lucide-react'
+'use client'
 
-import {
-  formatShanghaiTime,
-  getCategoryLabel,
-  getScoreTier,
-  inferSourceType,
-  toDisplayScore,
-} from '@/lib/feed-view'
-import { cn } from '@/lib/utils'
+import { useId, useState } from 'react'
+import Link from 'next/link'
+import { ArrowUpRight, ChevronDown, Sparkles } from 'lucide-react'
+import { formatShanghaiTime, getCategoryLabel, toDisplayScore } from '@/lib/feed-view'
 import type { Article } from '@/types/feed'
 
 interface TimelineCardProps {
   article: Article
-  variant?: 'lead' | 'standard'
+  compact?: boolean
   index?: number
 }
 
-export default function TimelineCard({ article, variant = 'standard', index = 0 }: TimelineCardProps) {
-  const score = toDisplayScore(article.score)
-  const tier = getScoreTier(article.score)
-  const sourceType = inferSourceType(article.source, article.url)
-  const dateTime = article.discovered_at
-
-  const meta = (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-[hsl(var(--feed-muted))]">
-      <span className="text-[hsl(var(--feed-ink))]">{article.source || '来源待核验'}</span>
-      <span aria-hidden="true">/</span>
-      <span>{sourceType.label}</span>
-      <time dateTime={dateTime} title="北京时间">{formatShanghaiTime(dateTime)}</time>
-      {article.featured === 1 && (
-        <span className="feed-accent inline-flex items-center gap-1">
-          <Sparkles className="h-3 w-3" aria-hidden="true" /> 精选
-        </span>
-      )}
-    </div>
-  )
-
-  if (variant === 'lead') {
-    return (
-      <article className="group feed-hairline relative overflow-hidden border-y py-7 sm:py-10">
-        <Link href={`/feed/${article.url_hash}`} className="grid gap-8 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] md:grid-cols-[minmax(0,1.5fr)_minmax(15rem,.7fr)] md:items-end" aria-label={`查看详情：${article.title}`}>
-          <div>
-            <div className="mb-5 flex items-center justify-between gap-4">
-              {meta}
-              <span className="feed-display text-4xl italic tabular-nums text-[hsl(var(--feed-accent))]">{String(index + 1).padStart(2, '0')}</span>
-            </div>
-            <h3 className="feed-display max-w-5xl text-balance text-[clamp(2.35rem,5.5vw,5.9rem)] font-medium leading-[0.94] tracking-[-0.055em] transition-transform duration-500 group-hover:translate-x-1 motion-reduce:transform-none motion-reduce:transition-none">
-              {article.title}
-            </h3>
-          </div>
-          <div className="md:border-l md:border-[hsl(var(--feed-line))] md:pl-7">
-            {article.summary && <p className="line-clamp-5 text-sm leading-7 text-[hsl(var(--feed-muted))] sm:text-base">{article.summary}</p>}
-            {article.takeaway && <p className="mt-4 border-l-2 border-[hsl(var(--feed-accent))] pl-3 text-sm font-medium leading-6">{article.takeaway}</p>}
-            <div className="mt-6 flex items-end justify-between gap-4">
-              <span className="feed-kicker">{getCategoryLabel(article.category)} · {score}/100 {tier.label}</span>
-              <span className="feed-accent-bg flex h-11 w-11 items-center justify-center rounded-full text-[hsl(var(--feed-paper))] transition-transform duration-300 group-hover:rotate-[-18deg] group-hover:scale-110 motion-reduce:transform-none motion-reduce:transition-none">
-                <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-              </span>
-            </div>
-          </div>
-        </Link>
-      </article>
-    )
-  }
-
+export default function TimelineCard({ article, compact = false, index = 0 }: TimelineCardProps) {
+  const [expanded, setExpanded] = useState(false)
+  const previewId = useId()
   return (
-    <article className="group feed-hairline relative border-b py-7 sm:py-9">
-      <Link href={`/feed/${article.url_hash}`} className="flex h-full flex-col rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]" aria-label={`查看详情：${article.title}`}>
-        <div className="mb-5 flex items-start justify-between gap-5">
-          {meta}
-          <span className="feed-display shrink-0 text-2xl italic tabular-nums text-[hsl(var(--feed-muted))]">{String(index + 1).padStart(2, '0')}</span>
+    <article className={`feed-story group feed-hairline border-b px-5 sm:px-7 last:border-b-0 ${compact ? 'py-4' : 'py-5 sm:py-6'}`} style={{ animationDelay: `${Math.min(index, 4) * 35}ms` }}>
+      <Link
+        href={`/feed/${article.url_hash}`}
+        className="block rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]"
+        aria-label={`查看详情：${article.title}`}
+      >
+        <div className="feed-muted mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <span className="font-medium text-[hsl(var(--feed-ink))]">{article.source || '来源待核验'}</span>
+          <span aria-hidden="true">·</span>
+          <time dateTime={article.discovered_at} title="北京时间">{formatShanghaiTime(article.discovered_at)}</time>
+          {article.featured === 1 && (
+            <span className="feed-accent ml-1 inline-flex items-center gap-1 rounded bg-[hsl(var(--feed-accent)/.08)] px-1.5 py-0.5">
+              <Sparkles className="h-3 w-3" aria-hidden="true" /> 精选
+            </span>
+          )}
         </div>
-        <h3 className="feed-display text-balance text-3xl font-medium leading-[1.02] tracking-[-0.035em] transition-colors duration-300 group-hover:text-[hsl(var(--feed-accent))] motion-reduce:transition-none sm:text-4xl">
-          {article.title}
-        </h3>
-        {article.summary && <p className="mt-5 line-clamp-3 text-sm leading-7 text-[hsl(var(--feed-muted))]">{article.summary}</p>}
-        <div className="mt-auto flex items-end justify-between gap-4 pt-7">
-          <div className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-[hsl(var(--feed-muted))]">
-            <span>{getCategoryLabel(article.category)}</span>
-            <span className="mx-2">·</span>
-            <span className={cn(tier.key === 'must-read' && 'feed-accent')}>{score}/100</span>
-          </div>
-          <span className="inline-flex items-center gap-2 text-xs font-semibold">
-            阅读 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 motion-reduce:transform-none" aria-hidden="true" />
-          </span>
+        <div className="flex items-start gap-5">
+          <h3 className={`feed-display min-w-0 flex-1 font-semibold leading-[1.5] tracking-[-0.015em] [overflow-wrap:anywhere] transition-colors group-hover:text-[hsl(var(--feed-accent))] ${compact ? 'text-lg' : 'text-[20px] sm:text-[22px]'}`}>
+            {article.title}
+          </h3>
+          <ArrowUpRight className="feed-muted mt-2 hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" />
         </div>
       </Link>
+        {!compact && !expanded && article.summary && <p className="feed-muted mt-2 line-clamp-2 text-sm leading-7">{article.summary}</p>}
+        {expanded && <div id={previewId} className="feed-preview mt-3 space-y-3 text-sm leading-7">
+          {article.summary && <p className="feed-muted">{article.summary}</p>}
+          {article.takeaway && <p className="rounded-lg bg-[hsl(var(--feed-accent)/.06)] px-4 py-3"><span className="feed-accent mr-2 font-semibold">推荐理由</span>{article.takeaway}</p>}
+        </div>}
+        <div className="feed-muted mt-3 flex items-center gap-3 text-xs">
+          <span className="rounded-md bg-[hsl(var(--feed-ink)/.045)] px-2 py-1">{getCategoryLabel(article.category)}</span>
+          {(article.summary || article.takeaway) && <button type="button" onClick={() => setExpanded(!expanded)} aria-expanded={expanded} aria-controls={expanded ? previewId : undefined}
+            className="feed-accent inline-flex min-h-9 items-center gap-1 rounded-md px-1 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]">
+            {expanded ? '收起导读' : '展开导读'}<ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+          </button>}
+          <span className="ml-auto tabular-nums" title="系统综合评分，不代表事实核验结论">评分 {toDisplayScore(article.score)}/100</span>
+        </div>
     </article>
   )
 }

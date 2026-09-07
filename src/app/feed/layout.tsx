@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { FeedExperience } from '@/components/feed/feed-experience'
 
 export const metadata: Metadata = {
   title: {
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 }
 
 export default function FeedLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return <FeedExperience>{children}</FeedExperience>
 }

@@ -37,7 +37,7 @@ export default function HotPage() {
   if (loading) {
     return (
       <div className="feed-paper min-h-screen">
-        <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[76rem] px-4 py-12 sm:px-6 lg:px-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-48"></div>
             <div className="h-64 bg-muted rounded"></div>
@@ -49,11 +49,11 @@ export default function HotPage() {
 
   return (
     <div className="feed-paper min-h-screen">
-      <FeedMasthead section="Radar / 热点雷达" />
-      <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+      <FeedMasthead section="热点榜" />
+      <main className="mx-auto max-w-[76rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <header className="feed-hairline grid gap-6 border-b pb-10 lg:grid-cols-[1fr_20rem] lg:items-end">
-          <div><p className="feed-kicker">Live radar / {timeWindow}</p><h1 className="feed-display mt-3 text-6xl font-medium tracking-[-0.055em] sm:text-8xl">热点雷达</h1></div>
-          <p className="feed-muted text-sm leading-7">不是热搜复刻。这里记录近期被多个来源反复提及、值得继续观察的主题与信号源。</p>
+          <div><p className="feed-kicker">统计范围 / {timeWindow}</p><h1 className="feed-display mt-3 text-[28px] font-semibold leading-tight sm:text-[32px]">热点榜</h1></div>
+          <p className="feed-muted text-sm leading-7">近期报道较多的关键词与内容来源。</p>
         </header>
 
         <div className="grid gap-14 py-10 lg:grid-cols-[1.25fr_.75fr] lg:gap-16">
@@ -73,7 +73,7 @@ export default function HotPage() {
                 >
                   <span className={`feed-display text-3xl italic tabular-nums ${index < 3 ? 'feed-accent' : 'feed-muted'}`}>{String(index + 1).padStart(2, '0')}</span>
                   <div className="min-w-0">
-                    <h3 className="feed-display truncate text-2xl font-medium tracking-[-0.025em] transition-colors group-hover:text-[hsl(var(--feed-accent))] sm:text-3xl">
+                    <h3 className="feed-display truncate text-xl font-semibold leading-snug transition-colors group-hover:text-[hsl(var(--feed-accent))]">
                       {item.topic}
                     </h3>
                   </div>
