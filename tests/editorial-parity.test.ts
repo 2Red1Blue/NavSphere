@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
@@ -8,7 +8,13 @@ import { canonicalEditorialJson, parseEditorialJson, validateEditorialApproval, 
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
-const python = fileURLToPath(new URL('../../.venv/bin/python3', import.meta.url))
+const python = process.env.CONTENT_OS_PARITY_PYTHON
+  ?? fileURLToPath(new URL('../../.venv/bin/python3', import.meta.url))
+const pythonContract = fileURLToPath(new URL('../../scripts/editorial_publication.py', import.meta.url))
+const crossProjectIntegrationAvailable = existsSync(python) && existsSync(pythonContract)
+const integrationOptions = crossProjectIntegrationAvailable
+  ? undefined
+  : { skip: 'Parent Content OS Python contract is not part of the standalone NavSphere repository.' }
 
 function pythonCheck(value: unknown) {
   const result = spawnSync(python, ['-c', `
@@ -32,7 +38,7 @@ else:
   return JSON.parse(result.stdout)
 }
 
-test('Python evidence verification and edge approval hash exactly match the shared UTF-8 fixture', async () => {
+test('Python evidence verification and edge approval hash exactly match the shared UTF-8 fixture', integrationOptions, async () => {
   const local = pythonCheck({ fixture })
   const edge = await validateEditorialApproval(fixture.manifest, fixture.attestation)
   assert.deepEqual(local, fixture.expected)
@@ -42,7 +48,7 @@ test('Python evidence verification and edge approval hash exactly match the shar
   assert.equal(edge.reviewSha256, fixture.expected.review_sha256)
 })
 
-test('cross-language publication and strict parser acceptance agrees on hostile Unicode and JSON', () => {
+test('cross-language publication and strict parser acceptance agrees on hostile Unicode and JSON', integrationOptions, () => {
   const base = fixture.manifest.publication
   const publications = [structuredClone(base)]
   for (const headline of [
