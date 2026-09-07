@@ -343,29 +343,43 @@ export default function FeedDetailPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     async function fetchArticle() {
       try {
         setLoading(true)
-        const res = await fetch(`/api/feed/${id}`, { cache: 'no-store' })
+        setError(null)
+        const res = await fetch(`/api/feed/${id}`, {
+          cache: 'no-store',
+          signal: controller.signal,
+        })
         if (!res.ok) {
           if (res.status === 404) throw new Error('文章未找到')
           throw new Error(`加载失败 (${res.status})`)
         }
         const data = await res.json()
-        setArticle(data.data)
+        if (!controller.signal.aborted) setArticle(data.data)
       } catch (err) {
-        setError((err as Error).message)
+        if ((err as Error).name !== 'AbortError' && !controller.signal.aborted) {
+          setError((err as Error).message)
+        }
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
     if (id) fetchArticle()
+    return () => controller.abort()
   }, [id])
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(window.location.href)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async () => {
+    if (!navigator.clipboard?.writeText) return
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
   }
 
   // Keep the parsed Markdown and component identities stable across SWR/state

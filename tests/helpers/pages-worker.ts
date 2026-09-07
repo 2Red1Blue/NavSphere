@@ -196,14 +196,21 @@ export class PagesWorkerFixture {
     owned.logged = true
   }
 
+  private failureDetails(owned: OwnedProcess): string {
+    const details = sanitize(owned.output).trim().slice(-4_096)
+    return details ? `; bounded output:\n${details}` : ''
+  }
+
   private async command(args: string[]): Promise<string> {
     const owned = this.launch(args)
     let timer: ReturnType<typeof setTimeout> | undefined
     const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), COMMAND_TIMEOUT) })
     try {
       const exit = await Promise.race([owned.done, timeout])
-      if (!exit) throw new Error(`Local Wrangler command timed out; logs: ${owned.logPath}`)
-      if (exit.code !== 0 || owned.overflow) throw new Error(`Local Wrangler command failed (exit ${exit.code}); logs: ${owned.logPath}`)
+      if (!exit) throw new Error(`Local Wrangler command timed out; logs: ${owned.logPath}${this.failureDetails(owned)}`)
+      if (exit.code !== 0 || owned.overflow) {
+        throw new Error(`Local Wrangler command failed (exit ${exit.code}); logs: ${owned.logPath}${this.failureDetails(owned)}`)
+      }
       return owned.stdout
     } finally {
       clearTimeout(timer)
