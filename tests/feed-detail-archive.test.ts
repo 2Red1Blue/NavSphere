@@ -239,5 +239,5 @@ test('missing detail IDs are non-cacheable404, and D1 failures are sanitized503'
 
 test('reader fetch opts out of browser HTTP caching', () => {
   const source = readFileSync(new URL('../src/app/feed/[id]/page.tsx', import.meta.url), 'utf8')
-  assert.match(source, /fetch\(`\/api\/feed\/\$\{id\}`,\s*\{\s*cache:\s*'no-store'\s*\}\)/)
+  assert.match(source, /fetch\(`\/api\/feed\/\$\{id\}`,\s*\{\s*cache:\s*'no-store',\s*signal:\s*controller\.signal,\s*\}\)/)
 })
