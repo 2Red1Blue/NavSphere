@@ -10,7 +10,6 @@ import Link from 'next/link'
 import remarkGfm from 'remark-gfm'
 import { ExternalLink, ArrowLeft, Star, Sparkles, Lightbulb, Target, Copy, Check, List } from 'lucide-react'
 import { Button } from '@/registry/new-york/ui/button'
-import { Badge } from '@/registry/new-york/ui/badge'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
 import { FeedError } from '@/components/feed/feed-error'
 import { EditorialBrief } from '@/components/feed/editorial-brief'
@@ -54,9 +53,9 @@ function ScoreBar({ icon: Icon, label, value, max, color }: {
         <Icon className="h-4 w-4" />
         <span className="text-sm font-medium">{label}</span>
       </div>
-      <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[hsl(var(--feed-line)/.45)]">
         <div
-          className={cn('h-full rounded-full transition-all duration-700 motion-reduce:transition-none', color.replace('text-', 'bg-'))}
+          className="feed-accent-bg h-full rounded-full transition-all duration-700 motion-reduce:transition-none"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -341,6 +340,7 @@ export default function FeedDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [readingProgress, setReadingProgress] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -370,6 +370,21 @@ export default function FeedDetailPage() {
     if (id) fetchArticle()
     return () => controller.abort()
   }, [id])
+
+  useEffect(() => {
+    const updateProgress = () => {
+      const root = document.documentElement
+      const scrollable = root.scrollHeight - root.clientHeight
+      setReadingProgress(scrollable > 0 ? Math.min(100, (root.scrollTop / scrollable) * 100) : 0)
+    }
+    updateProgress()
+    window.addEventListener('scroll', updateProgress, { passive: true })
+    window.addEventListener('resize', updateProgress)
+    return () => {
+      window.removeEventListener('scroll', updateProgress)
+      window.removeEventListener('resize', updateProgress)
+    }
+  }, [article])
 
   const handleCopy = async () => {
     if (!navigator.clipboard?.writeText) return
@@ -439,175 +454,101 @@ export default function FeedDetailPage() {
   const sourceType = inferSourceType(article.source, article.url)
   const sourceLink = getSourceLink(article)
   return (
-    <div className="mx-auto flex max-w-6xl gap-12 px-4 py-8 sm:px-6 lg:py-12">
-      {/* 主内容区 */}
-      <main className="min-w-0 w-full max-w-[65ch] flex-1" id="main-content">
-        {/* Back */}
-        <Link
-          href="/feed"
-          className="group mb-8 inline-flex items-center gap-2 rounded-sm text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 motion-reduce:transition-none"
-        >
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none" />
-          返回 Feed
-        </Link>
+    <div className="feed-paper min-h-screen selection:bg-orange-200/70 selection:text-stone-950 dark:selection:bg-orange-800/70 dark:selection:text-stone-50">
+      <div className="feed-accent-bg fixed left-0 top-0 z-50 h-0.5" style={{ width: `${readingProgress}%` }} aria-hidden="true" />
 
-        <article>
-          {/* Hero */}
-          <header className="mb-8">
-            {/* Badges row */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <div
-                className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-bold',
-                  scoreTier.key === 'must-read'
-                    ? 'border-primary/25 bg-primary/10 text-primary'
-                    : scoreTier.key === 'recommended'
-                    ? 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                    : 'border-border bg-muted text-foreground'
-                )}
-              >
-                <Star className="h-4 w-4 fill-current" />
-                {displayScore}/100 · {scoreTier.label}
-              </div>
+      <header className="feed-hairline border-b">
+        <div className="mx-auto flex max-w-[90rem] items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <Link href="/feed" className="group inline-flex items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]">
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1 motion-reduce:transform-none" />
+            <span className="feed-display text-xl font-semibold">信号志</span>
+          </Link>
+          <span className="feed-kicker hidden sm:block">NavSphere / Intelligence Reader</span>
+          <button type="button" onClick={handleCopy} className="feed-muted inline-flex items-center gap-2 rounded-full border border-[hsl(var(--feed-line))] px-3 py-1.5 text-xs transition-colors hover:text-[hsl(var(--feed-ink))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]" aria-label="复制链接" title="复制链接">
+            {copied ? <Check className="h-3.5 w-3.5 feed-accent" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? '已复制' : '分享'}
+          </button>
+        </div>
+      </header>
 
-              {typeInfo && (
-                <Badge variant="outline" className="text-xs gap-1">
-                  <span>{typeInfo.icon}</span>
-                  {typeInfo.label}
-                </Badge>
-              )}
-
-              <Badge variant="secondary" className="text-xs">{domainLabel}</Badge>
-
-              {article.content_potential && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'text-xs',
-                    article.content_potential === 'High'
-                      ? 'border-green-300 text-green-700 dark:border-green-700 dark:text-green-400'
-                      : article.content_potential === 'Medium'
-                      ? 'border-yellow-300 text-yellow-700 dark:border-yellow-700 dark:text-yellow-400'
-                      : ''
-                  )}
-                >
-                  {article.content_potential === 'High' ? '高潜力' :
-                   article.content_potential === 'Medium' ? '中潜力' : '低潜力'}
-                </Badge>
-              )}
+      <article>
+        <header className="feed-hairline border-b">
+          <div className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+            <div className="mb-7 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="feed-accent inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em]"><Star className="h-3.5 w-3.5 fill-current" /> {displayScore}/100 · {scoreTier.label}</span>
+              <span className="feed-muted">/</span>
+              <span className="feed-kicker !text-[hsl(var(--feed-muted))]">{domainLabel}{typeInfo ? ` · ${typeInfo.label}` : ''}</span>
             </div>
-
-            <h1 className="text-2xl font-bold leading-tight tracking-tight">
+            <h1 className="feed-display max-w-6xl text-balance text-[clamp(3rem,7.4vw,7.7rem)] font-medium leading-[0.91] tracking-[-0.06em]">
               {article.title}
             </h1>
-
-            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-              <span className="font-medium text-foreground/70">{article.source}</span>
-              <span aria-hidden="true">·</span>
-              <span>{sourceType.label}</span>
-              {article.published_at && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <time dateTime={article.published_at}>{formatDate(article.published_at)}</time>
-                </>
-              )}
+            <div className="feed-muted mt-9 flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-semibold text-[hsl(var(--feed-ink))]">{article.source}</span>
+              <span aria-hidden="true">·</span><span>{sourceType.label}</span>
+              {article.published_at && <><span aria-hidden="true">·</span><time dateTime={article.published_at}>{formatDate(article.published_at)}</time></>}
             </div>
-          </header>
-
-          {/* AI guide */}
-          {article.summary && (
-            <section className="mb-6">
-              <h2 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                <Sparkles className="h-3.5 w-3.5" />
-                AI 导读
-              </h2>
-              <div className="text-sm leading-relaxed text-foreground/85 space-y-2">
-                {article.summary.split('\n').map((line, i) => (
-                  <p key={i}>{line}</p>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Recommendation reason */}
-          {article.takeaway && (
-            <section className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/10">
-              <h2 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                <Lightbulb className="h-3.5 w-3.5" />
-                推荐理由
-              </h2>
-              <p className="text-sm font-medium leading-relaxed">{article.takeaway}</p>
-            </section>
-          )}
-
-          {/* Score Analysis */}
-          <section className="mb-6 p-5 rounded-xl bg-muted/30">
-            <h2 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-              <Target className="h-3.5 w-3.5" />
-              评分分析
-            </h2>
-            <div className="space-y-4">
-              <ScoreBar icon={Sparkles} label="信号密度" value={article.signal} max={10} color="text-blue-600 dark:text-blue-400" />
-              <ScoreBar icon={Lightbulb} label="新颖度" value={article.novelty} max={10} color="text-purple-600 dark:text-purple-400" />
-              <ScoreBar icon={Target} label="实用性" value={article.usefulness} max={10} color="text-green-600 dark:text-green-400" />
-            </div>
-          </section>
-
-          {/* Editorials take the body slot; original Markdown is shown only otherwise. */}
-          {editorial ? (
-            <EditorialBrief editorial={editorial} />
-          ) : readerContent ? (
-            <section className="mb-10 border-t pt-8" aria-label="文章正文">
-              <div className="prose max-w-[65ch] text-base dark:prose-invert prose-hr:border-border prose-li:my-2 prose-li:leading-8 prose-ol:my-6 prose-ul:my-6 prose-strong:text-foreground">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={components}
-                  skipHtml
-                >
-                  {readerContent}
-                </ReactMarkdown>
-              </div>
-            </section>
-          ) : (
-            <section className="mb-8 border-y border-border py-6" aria-labelledby="reader-fallback-title">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                内容状态
-              </p>
-              <h2 id="reader-fallback-title" className="text-lg font-semibold tracking-tight">
-                本站暂不展示完整原文
-              </h2>
-              <p className="mt-3 max-w-[60ch] text-base leading-7 text-muted-foreground">
-                当前条目仅提供 AI 导读与推荐理由。完整原文的格式、质量与公开许可尚未同时通过验证。
-                {sourceLink?.label === 'AIHOT收录页'
-                  ? '尚未核验上游原文链接，可前往 AIHOT 收录页查看来源线索。'
-                  : sourceLink ? '可通过下方链接前往来源网站阅读。' : '当前没有可安全打开的来源链接。'}
-              </p>
-            </section>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-4 border-t">
-            {sourceLink && <Button asChild>
-              <a href={sourceLink.url} target="_blank" rel="noopener noreferrer" className="gap-2">
-                <ExternalLink className="h-4 w-4" />
-                {sourceLink.label}
-              </a>
-            </Button>}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleCopy}
-              aria-label="复制链接"
-              title="复制链接"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-            </Button>
           </div>
-        </article>
-      </main>
+        </header>
 
-      {/* 右侧 TOC 大纲 */}
-      {readerContent && <TocSidebar headings={headings} />}
+        <div className="mx-auto grid max-w-[90rem] gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-16 xl:gap-20">
+          <main className="min-w-0 max-w-[76ch]" id="main-content">
+            {/* Editorials take the body slot; original Markdown is shown only otherwise. */}
+            {editorial ? (
+              <EditorialBrief editorial={editorial} />
+            ) : readerContent ? (
+              <section className="mb-12" aria-label="文章正文">
+                <div className="feed-hairline mb-8 flex items-center justify-between border-y py-3">
+                  <p className="feed-kicker">Reader / 正文</p>
+                  <span className="feed-muted text-xs">经格式与许可校验</span>
+                </div>
+                <div className="prose max-w-[68ch] text-base dark:prose-invert prose-hr:border-[hsl(var(--feed-line))] prose-li:my-2 prose-li:leading-8 prose-ol:my-6 prose-ul:my-6 prose-strong:text-[hsl(var(--feed-ink))]">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} skipHtml>{readerContent}</ReactMarkdown>
+                </div>
+              </section>
+            ) : (
+              <section className="feed-hairline mb-12 border-y py-10" aria-labelledby="reader-fallback-title">
+                <p className="feed-kicker mb-4">内容状态</p>
+                <h2 id="reader-fallback-title" className="feed-display text-4xl font-medium tracking-[-0.035em]">本站暂不展示完整原文</h2>
+                <p className="feed-muted mt-5 max-w-[60ch] text-base leading-8">
+                  当前条目仅提供编辑导读与推荐理由。完整原文的格式、质量与公开许可尚未同时通过验证。
+                  {sourceLink?.label === 'AIHOT收录页' ? '尚未核验上游原文链接，可前往 AIHOT 收录页查看来源线索。' : sourceLink ? '可通过来源链接继续阅读。' : '当前没有可安全打开的来源链接。'}
+                </p>
+              </section>
+            )}
+          </main>
+
+          <aside className="min-w-0 lg:order-none" aria-label="编辑注与文章信息">
+            <div className="space-y-8 lg:sticky lg:top-8">
+              {(article.summary || article.takeaway) && (
+                <section className="feed-hairline border-t pt-4">
+                  <h2 className="feed-kicker mb-4">Editor&apos;s note</h2>
+                  {article.summary && <div className="feed-muted space-y-2 text-sm leading-7">{article.summary.split('\n').map((line, i) => <p key={i}>{line}</p>)}</div>}
+                  {article.takeaway && <p className="mt-5 border-l-2 border-[hsl(var(--feed-accent))] pl-4 text-sm font-semibold leading-7">{article.takeaway}</p>}
+                </section>
+              )}
+
+              <section className="feed-hairline border-t pt-4">
+                <h2 className="feed-kicker mb-5">Signal index</h2>
+                <div className="space-y-4">
+                  <ScoreBar icon={Sparkles} label="信号密度" value={article.signal} max={10} color="text-[hsl(var(--feed-accent))]" />
+                  <ScoreBar icon={Lightbulb} label="新颖度" value={article.novelty} max={10} color="text-[hsl(var(--feed-accent))]" />
+                  <ScoreBar icon={Target} label="实用性" value={article.usefulness} max={10} color="text-[hsl(var(--feed-accent))]" />
+                </div>
+              </section>
+
+              {readerContent && <TocSidebar headings={headings} />}
+
+              <div className="feed-hairline flex items-center gap-3 border-t pt-5">
+                {sourceLink && <Button asChild className="feed-accent-bg flex-1 rounded-full border-0 text-[hsl(var(--feed-paper))] hover:opacity-90">
+                  <a href={sourceLink.url} target="_blank" rel="noopener noreferrer" className="gap-2">
+                    <ExternalLink className="h-4 w-4" />{sourceLink.label}
+                  </a>
+                </Button>}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </article>
     </div>
   )
 }

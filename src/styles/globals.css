@@ -279,3 +279,75 @@
     @apply px-4;
   }
 }
+
+/* Feed is a reading product, not an admin surface. Keep its editorial palette
+   scoped so the navigation/admin product retains the existing design system. */
+@layer components {
+  .feed-paper {
+    --feed-paper: 43 38% 96%;
+    --feed-ink: 154 23% 12%;
+    --feed-muted: 151 8% 42%;
+    --feed-line: 40 18% 82%;
+    --feed-accent: 12 72% 48%;
+    color: hsl(var(--feed-ink));
+    background-color: hsl(var(--feed-paper));
+    background-image:
+      radial-gradient(circle at 14% 8%, hsl(42 58% 91% / 0.62), transparent 30rem),
+      linear-gradient(90deg, hsl(var(--feed-line) / 0.16) 1px, transparent 1px);
+    background-size: auto, 5rem 100%;
+  }
+
+  .dark .feed-paper {
+    --feed-paper: 150 16% 8%;
+    --feed-ink: 43 35% 93%;
+    --feed-muted: 45 9% 63%;
+    --feed-line: 151 9% 24%;
+    --feed-accent: 18 78% 61%;
+    background-image:
+      radial-gradient(circle at 14% 8%, hsl(151 20% 14% / 0.72), transparent 30rem),
+      linear-gradient(90deg, hsl(var(--feed-line) / 0.18) 1px, transparent 1px);
+  }
+
+  .feed-display {
+    font-family: var(--font-newsreader), "Noto Serif SC", "Source Han Serif SC",
+      "Songti SC", STSong, serif;
+    font-optical-sizing: auto;
+  }
+
+  .feed-kicker {
+    color: hsl(var(--feed-accent));
+    font-size: 0.6875rem;
+    font-weight: 750;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .feed-hairline {
+    border-color: hsl(var(--feed-line));
+  }
+
+  .feed-muted {
+    color: hsl(var(--feed-muted));
+  }
+
+  .feed-accent {
+    color: hsl(var(--feed-accent));
+  }
+
+  .feed-accent-bg {
+    background-color: hsl(var(--feed-accent));
+  }
+
+  .feed-drawer {
+    animation: feed-drawer-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes feed-drawer-in {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-drawer { animation: none; }
+}

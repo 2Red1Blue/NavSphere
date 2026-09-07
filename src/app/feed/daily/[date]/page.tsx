@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from 'lucide-react'
+import { FeedMasthead } from '@/components/feed/feed-masthead'
 
 export const runtime = 'edge'
 
@@ -57,10 +58,10 @@ function formatDate(date: string): string {
 
 function Section({ meta, articles }: { meta: (typeof SECTION_META)[number]; articles: DailyArticle[] }) {
   return (
-    <section aria-labelledby={`section-${meta.key}`} className="grid gap-5 border-t border-border py-9 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-8 sm:py-11">
+    <section aria-labelledby={`section-${meta.key}`} className="feed-hairline grid gap-5 border-t py-9 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-8 sm:py-11">
       <div>
-        <span className="text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{meta.index}</span>
-        <h2 className="mt-2 text-lg font-bold tracking-tight" id={`section-${meta.key}`}>{meta.title}</h2>
+        <span className="feed-display feed-accent text-3xl italic tabular-nums">{meta.index}</span>
+        <h2 className="feed-display mt-2 text-xl font-medium tracking-tight" id={`section-${meta.key}`}>{meta.title}</h2>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{meta.note}</p>
       </div>
 
@@ -78,10 +79,10 @@ function Section({ meta, articles }: { meta: (typeof SECTION_META)[number]; arti
                   <span aria-hidden="true">·</span>
                   <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">AI {article.displayScore}</span>
                 </div>
-                <h3 className="mt-2 text-lg font-semibold leading-snug tracking-tight sm:text-xl">
+                <h3 className="feed-display mt-2 text-2xl font-medium leading-snug tracking-[-0.025em] sm:text-3xl">
                   <Link
                     href={`/feed/${article.url_hash}`}
-                    className="decoration-emerald-600/50 underline-offset-4 transition-colors hover:text-emerald-700 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 dark:hover:text-emerald-400"
+                    className="decoration-[hsl(var(--feed-accent)/.5)] underline-offset-4 transition-colors hover:text-[hsl(var(--feed-accent))] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] focus-visible:ring-offset-4"
                   >
                     {article.title}
                   </Link>
@@ -171,23 +172,14 @@ export default function DailyDetailPage() {
   const { data: digest, navigation } = data
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/70">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <Link className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4" href="/feed/daily">
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" /> 日报归档
-          </Link>
-          <Link className="text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4" href="/feed">
-            完整精选流
-          </Link>
-        </div>
-      </header>
+    <div className="feed-paper min-h-screen">
+      <FeedMasthead section={`Daily / 第 ${digest.issue} 期`} />
 
       <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
         <article>
           <header className="pb-10 sm:pb-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">AI Daily · 第 {digest.issue} 期</p>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">{formatDate(digest.date)}</h1>
+            <p className="feed-kicker">AI Daily · 第 {digest.issue} 期</p>
+            <h1 className="feed-display mt-4 text-5xl font-medium tracking-[-0.045em] sm:text-7xl">{formatDate(digest.date)}</h1>
             <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2"><CalendarDays aria-hidden="true" className="h-4 w-4" />{digest.total} 篇精选</span>
               <span className="inline-flex items-center gap-2"><Clock3 aria-hidden="true" className="h-4 w-4" />预计阅读 {digest.estimatedReadMinutes} 分钟</span>

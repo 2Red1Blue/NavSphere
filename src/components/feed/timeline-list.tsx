@@ -16,27 +16,33 @@ export default function TimelineList({ articles }: TimelineListProps) {
   }
 
   const groups = groupArticlesByShanghaiDate(articles)
+  let articleIndex = 0
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-14">
       {groups.map((group) => {
         const headingId = `feed-date-${group.dateKey}`
         return (
           <section key={group.dateKey} aria-labelledby={headingId}>
-            <div className="mb-2 flex items-baseline gap-3 border-b border-border pb-3">
-              <h2 id={headingId} className="text-base font-semibold tracking-tight">
+            <div className="feed-hairline mb-1 flex items-baseline justify-between gap-3 border-b pb-3">
+              <h2 id={headingId} className="feed-kicker">
                 <time dateTime={group.dateKey === 'unknown' ? undefined : group.dateKey}>
                   {group.label}
                 </time>
               </h2>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {group.articles.length} 条动态
+              <span className="feed-muted text-xs tabular-nums">
+                {group.articles.length} 个信号
               </span>
             </div>
-            <div className="divide-y divide-border">
-              {group.articles.map((article) => (
-                <TimelineCard key={article.url_hash} article={article} />
-              ))}
+            <div className="grid md:grid-cols-2 md:gap-x-9">
+              {group.articles.map((article) => {
+                const index = articleIndex++
+                return (
+                  <div key={article.url_hash} className={index === 0 ? 'md:col-span-2' : ''}>
+                    <TimelineCard article={article} index={index} variant={index === 0 ? 'lead' : 'standard'} />
+                  </div>
+                )
+              })}
             </div>
           </section>
         )

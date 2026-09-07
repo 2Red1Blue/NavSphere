@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, CalendarDays, Clock3, Newspaper } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Clock3, Newspaper } from 'lucide-react'
+import { FeedMasthead } from '@/components/feed/feed-masthead'
 
 interface ArchiveDay {
   date: string
@@ -49,28 +50,18 @@ export default function DailyArchivePage() {
   }, [loadArchive])
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/70">
-        <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
-          <Link
-            href="/feed"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4"
-          >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            返回精选流
-          </Link>
-        </div>
-      </header>
+    <div className="feed-paper min-h-screen">
+      <FeedMasthead section="Daily / 每日简报" />
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <main className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-16">
           <div>
             <div className="mb-9 max-w-2xl">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400">
+              <p className="feed-kicker mb-3">
                 Daily intelligence brief
               </p>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">AI 每日简报</h1>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
+              <h1 className="feed-display text-6xl font-medium tracking-[-0.055em] sm:text-8xl">AI 每日简报</h1>
+              <p className="feed-muted mt-5 max-w-xl text-sm leading-7 sm:text-base">
                 每天不超过 8 条公开精选，按模型、产品、行业与技巧观点整理。约三分钟，先看结论，再决定深入阅读什么。
               </p>
             </div>
@@ -112,18 +103,18 @@ export default function DailyArchivePage() {
                   <h2 className="text-sm font-semibold">近期归档</h2>
                   <span className="text-xs text-muted-foreground">Asia / Shanghai</span>
                 </div>
-                <ol className="divide-y divide-border border-y">
+                <ol className="feed-hairline border-y">
                   {state.days.map((day, index) => (
                     <li key={day.date}>
                       <Link
                         href={`/feed/daily/${day.date}`}
-                        className="group grid gap-4 py-6 transition-colors hover:bg-muted/35 focus-visible:bg-muted/35 focus-visible:outline-none sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:items-center sm:px-3"
+                        className="feed-hairline group grid gap-4 border-b py-6 transition-colors last:border-b-0 hover:bg-[hsl(var(--feed-ink)/.035)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:items-center sm:px-3"
                       >
                         <span className="text-sm font-semibold tabular-nums text-muted-foreground" aria-hidden="true">
                           {String(index + 1).padStart(2, '0')}
                         </span>
                         <span>
-                          <span className="block text-lg font-semibold tracking-tight group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+                          <span className="feed-display block text-2xl font-medium tracking-[-0.025em] group-hover:text-[hsl(var(--feed-accent))]">
                             {formatDate(day.date)}
                           </span>
                           <span className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -141,19 +132,19 @@ export default function DailyArchivePage() {
             )}
           </div>
 
-          <aside className="h-fit border-t border-border pt-6 lg:sticky lg:top-8" aria-label="日报说明">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">阅读方法</h2>
+          <aside className="feed-hairline h-fit border-t pt-6 lg:sticky lg:top-8" aria-label="日报说明">
+            <h2 className="feed-kicker">阅读方法</h2>
             <dl className="mt-5 space-y-5 text-sm">
               <div className="flex gap-3">
-                <Newspaper aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <Newspaper aria-hidden="true" className="feed-accent mt-0.5 h-4 w-4 shrink-0" />
                 <div><dt className="font-medium">少而精</dt><dd className="mt-1 leading-6 text-muted-foreground">高分优先，稳定选取，不用无尽滚动。</dd></div>
               </div>
               <div className="flex gap-3">
-                <Clock3 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <Clock3 aria-hidden="true" className="feed-accent mt-0.5 h-4 w-4 shrink-0" />
                 <div><dt className="font-medium">三分钟</dt><dd className="mt-1 leading-6 text-muted-foreground">摘要负责扫读，推荐理由解释为什么值得看。</dd></div>
               </div>
               <div className="flex gap-3">
-                <CalendarDays aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <CalendarDays aria-hidden="true" className="feed-accent mt-0.5 h-4 w-4 shrink-0" />
                 <div><dt className="font-medium">北京时间</dt><dd className="mt-1 leading-6 text-muted-foreground">所有期次按 Asia/Shanghai 业务日期归档。</dd></div>
               </div>
             </dl>

@@ -44,8 +44,8 @@ const NAV_ITEMS = [
 ] as const
 
 const filterClass = (selected: boolean) =>
-  `w-full flex items-center justify-between rounded-md px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none ${
-    selected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+  `group w-full flex items-center justify-between border-l px-3 py-1.5 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none ${
+    selected ? 'border-[hsl(var(--feed-accent))] font-semibold text-[hsl(var(--feed-ink))]' : 'border-transparent text-[hsl(var(--feed-muted))] hover:border-[hsl(var(--feed-line))] hover:text-[hsl(var(--feed-ink))]'
   }`
 
 export default function SidebarNav({
@@ -57,22 +57,23 @@ export default function SidebarNav({
   onTypeChange,
 }: SidebarNavProps) {
   return (
-    <aside className="hidden w-64 flex-shrink-0 bg-background lg:block [.fixed_&]:block" aria-label="Feed 导航与筛选">
-      <nav className="sticky top-20 space-y-7 p-4 lg:p-0">
-        <div className="space-y-1" aria-label="内容导航">
+    <aside className="hidden flex-shrink-0 lg:block [.fixed_&]:block" aria-label="Feed 导航与筛选">
+      <nav className="sticky top-20 space-y-8 p-4 lg:p-0">
+        <div className="feed-hairline border-t pt-3" aria-label="内容导航">
+          <p className="feed-kicker mb-3 px-3">阅览索引</p>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+              className="group flex items-center justify-between border-b border-[hsl(var(--feed-line)/.62)] px-3 py-2.5 text-sm text-[hsl(var(--feed-muted))] outline-none transition-colors hover:text-[hsl(var(--feed-ink))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none"
             >
-              <item.icon className="h-4 w-4" aria-hidden="true" />
               <span>{item.label}</span>
+              <item.icon className="h-3.5 w-3.5 transition-transform group-hover:rotate-[-8deg] motion-reduce:transform-none" aria-hidden="true" />
             </Link>
           ))}
           <Link
             href="/"
-            className="mt-3 flex items-center gap-3 border-t border-border px-3 pt-4 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+            className="mt-3 flex items-center gap-3 px-3 pt-2 text-xs text-[hsl(var(--feed-muted))] outline-none transition-colors hover:text-[hsl(var(--feed-ink))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] motion-reduce:transition-none"
           >
             <Home className="h-4 w-4" aria-hidden="true" />
             <span>返回导航站</span>
@@ -81,7 +82,7 @@ export default function SidebarNav({
 
         {categories.length > 0 && (
           <section aria-labelledby="category-filter-heading" className="space-y-2">
-            <h2 id="category-filter-heading" className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 id="category-filter-heading" className="feed-kicker px-3">
               领域
             </h2>
             <div className="space-y-1">
@@ -106,7 +107,7 @@ export default function SidebarNav({
 
         {types.length > 0 && (
           <section id="topics" aria-labelledby="type-filter-heading" className="scroll-mt-24 space-y-2">
-            <h2 id="type-filter-heading" className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 id="type-filter-heading" className="feed-kicker px-3">
               主题类型
             </h2>
             <div className="space-y-1">

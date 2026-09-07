@@ -4,12 +4,18 @@ import { Toaster } from "@/components/ui/toaster"
 import { Providers } from '@/components/providers'
 import type { Metadata } from 'next'
 import Script from 'next/script'
-import { Inter } from 'next/font/google'
+import { Inter, Newsreader } from 'next/font/google'
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
+})
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-newsreader',
 })
 
 export const metadata: Metadata = {
@@ -32,7 +38,7 @@ export default function RootLayout({
   const serializedGaId = gaId ? JSON.stringify(gaId).replace(/</g, '\\u003c') : ''
 
   return (
-    <html lang="zh-CN" suppressHydrationWarning className={inter.variable}>
+    <html lang="zh-CN" suppressHydrationWarning className={`${inter.variable} ${newsreader.variable}`}>
       <head>
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         {/* Google Analytics */}

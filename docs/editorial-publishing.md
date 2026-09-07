@@ -4,7 +4,7 @@
 
 ## 为什么单独存储
 
-本站整理的短稿不等于来源文章全文。`article_editorials` 只保存一份当前稿件及有限的审阅摘要；原 `articles.content`、原文全文许可、评分、来源链接与文章 ID 均不改变。阅读页单独标注“本站整理 · 独立新闻短稿”，事实、分析、局限和来源均按固定结构渲染，不执行模型生成的 HTML/Markdown。
+本站整理的短稿不等于来源文章全文。`article_editorials` 只保存一份当前稿件及有限的审阅摘要；原 `articles.content`、原文全文许可、评分、来源链接与文章 ID 均不改变。阅读页单独标注“本站整理 / Writer Agent 成稿 · 独立新闻短稿”，事实、分析、局限和来源均按固定结构渲染，不执行模型生成的 HTML/Markdown。
 
 借鉴 [Wagtail 的草稿/已发布版本分离](https://docs.wagtail.org/en/stable/topics/snippets/features.html#saving-draft-changes-of-snippets)，而不引入整套 CMS。结构化内容与渲染分离延续 BettaFish 的报告 IR 思路；逐节核对证据参考 Ragas 的 claim-level faithfulness，但校验摘要和证据编号不能证明事实、授权或独立复核。
 

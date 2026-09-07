@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { Article, FeedListResponse, FeedState } from '@/types/feed'
 import TimelineList from '@/components/feed/timeline-list'
 import SidebarNav from '@/components/feed/sidebar-nav'
@@ -9,7 +10,7 @@ import { FeedSkeleton } from '@/components/feed/feed-skeleton'
 import { FeedEmpty } from '@/components/feed/feed-empty'
 import { FeedError } from '@/components/feed/feed-error'
 import { Button } from '@/registry/new-york/ui/button'
-import { Menu, Search } from 'lucide-react'
+import { ArrowUpRight, Menu, Search, X } from 'lucide-react'
 
 const API_BASE = '/api/feed'
 const DEFAULT_LIMIT = 20
@@ -88,6 +89,20 @@ function FeedContent() {
     fetchArticles(1)
   }, [fetchArticles])
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [mobileMenuOpen])
+
   const handleLoadMore = useCallback(() => {
     fetchArticles(page + 1, true)
   }, [page, fetchArticles])
@@ -99,47 +114,85 @@ function FeedContent() {
 
   const hasMore = pagination.page < pagination.totalPages
   const showContent = state.status === 'success' || allArticles.length > 0
+  const pageTitle = featured ? '本周精选' : topic ? topic : '今日信号'
+  const pageNote = featured
+    ? '编辑部从近期内容中挑出的高密度读物。'
+    : topic
+      ? `正在浏览「${topic}」相关的公开内容与独立编辑稿。`
+      : '从模型、产品与研究噪声里，留下值得继续读的部分。'
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-4">
+    <div className="feed-paper min-h-screen selection:bg-orange-200/70 selection:text-stone-950 dark:selection:bg-orange-800/70 dark:selection:text-stone-50">
+      <header className="feed-hairline sticky top-0 z-30 border-b bg-[hsl(var(--feed-paper)/0.94)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[90rem] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              className="lg:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="-ml-2 rounded-full lg:hidden"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-label={mobileMenuOpen ? '关闭栏目与筛选' : '打开栏目与筛选'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="feed-mobile-navigation"
             >
               <Menu className="h-5 w-5" />
             </Button>
 
-            <h1 className="text-xl font-bold">
-              {featured ? '⭐ 精选' : topic ? `主题: ${topic}` : '全部文章'}
-            </h1>
+          <Link href="/feed" className="group mr-auto flex items-baseline gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-orange-600">
+            <span className="feed-display text-xl font-semibold tracking-[-0.04em] sm:text-2xl">信号志</span>
+            <span className="feed-kicker hidden group-hover:text-[hsl(var(--feed-ink))] sm:inline">NavSphere Signals</span>
+          </Link>
 
-            {/* Search */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md ml-auto">
+          <nav className="hidden items-center gap-1 text-sm lg:flex" aria-label="Feed 主导航">
+            {[
+              ['/feed?featured=true', '精选'],
+              ['/feed/daily', '日报'],
+              ['/feed/hot', '热点'],
+              ['/feed/topics', '主题'],
+            ].map(([href, label]) => (
+              <Link key={href} href={href} className="feed-muted rounded-full px-3 py-1.5 transition-colors hover:bg-black/5 hover:text-[hsl(var(--feed-ink))] dark:hover:bg-white/5">
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+            <form onSubmit={handleSearch} className="w-[min(15rem,42vw)] sm:w-64">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="feed-muted absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索文章..."
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="搜索信号"
+                  aria-label="搜索文章"
+                  className="feed-hairline h-9 w-full rounded-full border bg-transparent pl-9 pr-4 text-sm outline-none transition-colors placeholder:text-[hsl(var(--feed-muted))] focus:border-[hsl(var(--feed-accent))] focus:ring-2 focus:ring-[hsl(var(--feed-accent)/0.16)]"
                 />
               </div>
             </form>
-          </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar */}
+      <section className="feed-hairline border-b">
+        <div className="mx-auto grid max-w-[90rem] gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end lg:px-8">
+          <div>
+            <p className="feed-kicker">Issue / {new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', timeZone: 'Asia/Shanghai' }).format(new Date())}</p>
+            <h1 className="feed-display mt-3 max-w-4xl text-5xl font-medium leading-[0.95] tracking-[-0.055em] text-balance sm:text-7xl">
+              {pageTitle}
+            </h1>
+          </div>
+          <div className="lg:pb-1">
+            <p className="max-w-md text-sm leading-7 text-[hsl(var(--feed-muted))] sm:text-base">{pageNote}</p>
+            <div className="feed-hairline mt-5 flex items-center justify-between border-t pt-3 text-xs tabular-nums text-[hsl(var(--feed-muted))]">
+              <span>{pagination.total ? `${pagination.total} 篇馆藏` : '正在整理馆藏'}</span>
+              <Link href="/feed/daily" className="group inline-flex items-center gap-1 font-semibold text-[hsl(var(--feed-ink))]">
+                阅读今日简报 <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto grid max-w-[90rem] gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12 lg:px-8 lg:py-12">
           <SidebarNav 
             categories={categories}
             types={types}
@@ -165,11 +218,16 @@ function FeedContent() {
             }}
           />
 
-          {/* Mobile menu overlay */}
           {mobileMenuOpen && (
-            <div className="fixed inset-0 z-40 lg:hidden">
-              <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-              <div className="fixed left-0 top-0 bottom-0 w-64 bg-background shadow-xl">
+            <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="栏目与筛选">
+              <button type="button" className="fixed inset-0 cursor-default bg-stone-950/45 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} aria-label="关闭栏目与筛选" />
+              <div id="feed-mobile-navigation" className="feed-drawer feed-paper fixed bottom-0 left-0 top-0 w-[min(21rem,88vw)] overflow-y-auto border-r border-[hsl(var(--feed-line))] p-4 shadow-2xl">
+                <div className="mb-4 flex items-center justify-between px-2">
+                  <span className="feed-display text-xl font-semibold">阅览索引</span>
+                  <Button type="button" autoFocus variant="ghost" size="icon" className="rounded-full" onClick={() => setMobileMenuOpen(false)} aria-label="关闭栏目与筛选">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
                 <SidebarNav 
                   categories={categories}
                   types={types}
@@ -198,15 +256,15 @@ function FeedContent() {
             </div>
           )}
 
-          {/* Timeline content */}
-          <main className="flex-1 min-w-0">
+          <main className="min-w-0" id="main-content">
             {showContent ? (
               <>
                 <TimelineList articles={allArticles} />
                 {hasMore && (
-                  <div className="mt-8 text-center">
+                  <div className="feed-hairline mt-10 border-t pt-8 text-center">
                     <Button
                       variant="outline"
+                      className="feed-hairline rounded-full bg-transparent px-6 hover:bg-[hsl(var(--feed-ink))] hover:text-[hsl(var(--feed-paper))]"
                       onClick={handleLoadMore}
                       disabled={loadingMore}
                     >
@@ -214,7 +272,7 @@ function FeedContent() {
                     </Button>
                   </div>
                 )}
-                <p className="mt-4 text-center text-sm text-muted-foreground">
+                <p className="mt-4 text-center text-xs tabular-nums text-[hsl(var(--feed-muted))]">
                   已显示 {allArticles.length} / {pagination.total} 篇
                 </p>
               </>
@@ -226,7 +284,6 @@ function FeedContent() {
               <FeedError message={state.message} onRetry={() => fetchArticles(1)} />
             ) : null}
           </main>
-        </div>
       </div>
     </div>
   )
@@ -234,7 +291,7 @@ function FeedContent() {
 
 export default function FeedPage() {
   return (
-    <Suspense fallback={<FeedSkeleton />}>
+    <Suspense fallback={<div className="feed-paper min-h-screen px-4 py-16 sm:px-6"><div className="mx-auto max-w-[90rem]"><FeedSkeleton /></div></div>}>
       <FeedContent />
     </Suspense>
   )
