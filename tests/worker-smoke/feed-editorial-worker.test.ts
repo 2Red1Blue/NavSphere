@@ -7,7 +7,7 @@ import { PagesWorkerFixture, readSmokeSchema, type WorkerResponse } from '../hel
 
 type Approval = { manifest: EditorialManifest; attestation: EditorialAttestation }
 type SyntheticFixture = Approval & { expected: { manifest_sha256: string; approval_digest: string } }
-const fixture = JSON.parse(readFileSync(new URL('../../../tests/fixtures/editorial-publication-v1.json', import.meta.url), 'utf8')) as SyntheticFixture
+const fixture = JSON.parse(readFileSync(new URL('../fixtures/editorial-publication-v1.json', import.meta.url), 'utf8')) as SyntheticFixture
 const ID = fixture.manifest.publication.article_id
 const OTHER_ID = 'fedcba9876543210'
 const MISSING_ID = 'aaaaaaaaaaaaaaaa'

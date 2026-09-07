@@ -61,7 +61,7 @@ const fallbackFixture: Article = {
 }
 
 const editorialPublication = JSON.parse(readFileSync(
-  new URL('../../tests/fixtures/editorial-publication-v1.json', import.meta.url), 'utf8',
+  new URL('./fixtures/editorial-publication-v1.json', import.meta.url), 'utf8',
 )).manifest.publication
 const editorialFixture: Article = {
   ...fallbackFixture,

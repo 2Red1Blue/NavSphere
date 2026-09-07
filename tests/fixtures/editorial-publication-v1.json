@@ -1,0 +1,174 @@
+{
+  "purpose": "Synthetic fixture only; not approval for any real article.",
+  "packet": {
+    "schema_version": 1,
+    "collection": {
+      "url_hash": "0123456789abcdef",
+      "title": "合成编辑稿测试材料",
+      "url": "https://aihot.virxact.com/items/editorial-fixture",
+      "original_url": "https://papers.example.test/study?x=1&y=(2)#part",
+      "original_url_provenance": "aihot_api_v1"
+    },
+    "evidence": [
+      {
+        "id": "E1",
+        "label": "论文作者的实验说明",
+        "url": "https://papers.example.test/study?x=1&y=(2)#part",
+        "kind": "primary",
+        "text": "本材料仅用于自动化测试：作者报告一种实验方法，在限定任务中观察到结果变化，并明确说明样本范围有限，尚未经过外部独立复核。"
+      },
+      {
+        "id": "E2",
+        "label": "作者公开的代码与限制",
+        "url": "https://code.example.test/project",
+        "kind": "primary",
+        "text": "本材料仅用于自动化测试：同一作者公开了实验代码和运行说明，但公开代码本身不等于实验结果得到独立验证。🧪"
+      }
+    ]
+  },
+  "manifest": {
+    "schema_version": 1,
+    "publication": {
+      "schema_version": 1,
+      "renderer_version": "editorial-v1",
+      "article_id": "0123456789abcdef",
+      "source": {
+        "url": "https://aihot.virxact.com/items/editorial-fixture",
+        "original_url": "https://papers.example.test/study?x=1&y=(2)#part",
+        "original_url_provenance": "aihot_api_v1"
+      },
+      "packet_sha256": "0ec7e2e8a6beea72003140945a8fc25156f4625a947773f0caaf0e83ce096e61",
+      "evidence": [
+        {
+          "id": "E1",
+          "label": "论文作者的实验说明",
+          "url": "https://papers.example.test/study?x=1&y=(2)#part",
+          "kind": "primary",
+          "text_sha256": "6c48c894670050634f6c00cec73134dd1689183daab5e81f4b3184e348ff3c09"
+        },
+        {
+          "id": "E2",
+          "label": "作者公开的代码与限制",
+          "url": "https://code.example.test/project",
+          "kind": "primary",
+          "text_sha256": "de8d1f525ed05135ca0b8d691c2960f41e04f2bd189cfb0ce7058e03e2ca7675"
+        }
+      ],
+      "brief": {
+        "headline": {
+          "text": "作者报告实验结果，仍需独立复核",
+          "evidence_ids": [
+            "E1"
+          ]
+        },
+        "lead": {
+          "text": "作者在限定测试任务中报告了结果变化，同时说明实验样本范围有限，尚不能据此推断在其他场景也有相同表现。",
+          "evidence_ids": [
+            "E1"
+          ]
+        },
+        "facts": [
+          {
+            "text": "论文中的结果来自作者自行报告的限定实验，材料没有提供独立团队的复核结果。",
+            "evidence_ids": [
+              "E1"
+            ]
+          },
+          {
+            "text": "作者还公开了实验代码和运行说明，但代码公开不等于相关结论已得到验证。",
+            "evidence_ids": [
+              "E2"
+            ]
+          }
+        ],
+        "analysis": {
+          "text": "公开代码为后续复核提供了入口，但现有材料不足以判断方法在更广泛任务中的效果。",
+          "evidence_ids": [
+            "E1",
+            "E2"
+          ]
+        },
+        "caveats": [
+          "论文与代码来自同一作者，不能作为两份独立的交叉验证证据。"
+        ]
+      }
+    },
+    "action": "publish",
+    "expected_revision": 0,
+    "expected_state": "absent",
+    "review": {
+      "version": "editorial-review-v1",
+      "decisions": [
+        {
+          "path": "headline",
+          "text_sha256": "ecda04aa9c7eb65e2f6daf046ab3a259b9f7ad62a5caae482d942ccd78db872b",
+          "evidence_ids": [
+            "E1"
+          ],
+          "decision": "supported",
+          "note": "仅为自动化测试的合成审阅记录，不构成真实文章发布批准。"
+        },
+        {
+          "path": "lead",
+          "text_sha256": "38c983e5bc1786a447d56e3bffdb00fcfc8919c0c70853dddf68e0964020a797",
+          "evidence_ids": [
+            "E1"
+          ],
+          "decision": "supported",
+          "note": "仅为自动化测试的合成审阅记录，不构成真实文章发布批准。"
+        },
+        {
+          "path": "facts.0",
+          "text_sha256": "c407a86b47cbb6f972a227f5fdbdd4f5594779f2b88969ba840f266f136153e5",
+          "evidence_ids": [
+            "E1"
+          ],
+          "decision": "supported",
+          "note": "仅为自动化测试的合成审阅记录，不构成真实文章发布批准。"
+        },
+        {
+          "path": "facts.1",
+          "text_sha256": "02559c185dbc93a3651b38ebf16584e144a0f4b390d2fa5c7073392b821e3324",
+          "evidence_ids": [
+            "E2"
+          ],
+          "decision": "supported",
+          "note": "仅为自动化测试的合成审阅记录，不构成真实文章发布批准。"
+        },
+        {
+          "path": "analysis",
+          "text_sha256": "7cbacb5593131576d19cf67b22336e8f4399c702c4e504721ad5f91628b9bd4c",
+          "evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "decision": "interpretation",
+          "note": "仅为自动化测试的合成审阅记录，不构成真实文章发布批准。"
+        },
+        {
+          "path": "caveats.0",
+          "text_sha256": "b2947d0a94cab524212f071f09c616a6484870378e7724b85627bdfe369a1a54",
+          "evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "decision": "limitation",
+          "note": "仅为自动化测试的合成审阅记录，不构成真实文章发布批准。"
+        }
+      ]
+    }
+  },
+  "attestation": {
+    "schema_version": 1,
+    "manifest_sha256": "afad886e1381c7c534d7c623da7365c2a73435e7ae33595be3ec97c88af2d444",
+    "reviewer": "synthetic-test-operator",
+    "attested_at": "2026-09-04T00:00:00Z",
+    "statement": "reviewed-for-independent-editorial-publication-v1"
+  },
+  "expected": {
+    "publication_json": "{\"article_id\":\"0123456789abcdef\",\"brief\":{\"analysis\":{\"evidence_ids\":[\"E1\",\"E2\"],\"text\":\"公开代码为后续复核提供了入口，但现有材料不足以判断方法在更广泛任务中的效果。\"},\"caveats\":[\"论文与代码来自同一作者，不能作为两份独立的交叉验证证据。\"],\"facts\":[{\"evidence_ids\":[\"E1\"],\"text\":\"论文中的结果来自作者自行报告的限定实验，材料没有提供独立团队的复核结果。\"},{\"evidence_ids\":[\"E2\"],\"text\":\"作者还公开了实验代码和运行说明，但代码公开不等于相关结论已得到验证。\"}],\"headline\":{\"evidence_ids\":[\"E1\"],\"text\":\"作者报告实验结果，仍需独立复核\"},\"lead\":{\"evidence_ids\":[\"E1\"],\"text\":\"作者在限定测试任务中报告了结果变化，同时说明实验样本范围有限，尚不能据此推断在其他场景也有相同表现。\"}},\"evidence\":[{\"id\":\"E1\",\"kind\":\"primary\",\"label\":\"论文作者的实验说明\",\"text_sha256\":\"6c48c894670050634f6c00cec73134dd1689183daab5e81f4b3184e348ff3c09\",\"url\":\"https://papers.example.test/study?x=1&y=(2)#part\"},{\"id\":\"E2\",\"kind\":\"primary\",\"label\":\"作者公开的代码与限制\",\"text_sha256\":\"de8d1f525ed05135ca0b8d691c2960f41e04f2bd189cfb0ce7058e03e2ca7675\",\"url\":\"https://code.example.test/project\"}],\"packet_sha256\":\"0ec7e2e8a6beea72003140945a8fc25156f4625a947773f0caaf0e83ce096e61\",\"renderer_version\":\"editorial-v1\",\"schema_version\":1,\"source\":{\"original_url\":\"https://papers.example.test/study?x=1&y=(2)#part\",\"original_url_provenance\":\"aihot_api_v1\",\"url\":\"https://aihot.virxact.com/items/editorial-fixture\"}}",
+    "manifest_sha256": "afad886e1381c7c534d7c623da7365c2a73435e7ae33595be3ec97c88af2d444",
+    "review_sha256": "6576629f0d6cd63a700d9601faeeac73709a5cd3ae366cec8d90792059569883",
+    "approval_digest": "593ec1a2e796eb534148964d99bc079b0acdc8c4ab59f1d2c613169d1125012a"
+  }
+}

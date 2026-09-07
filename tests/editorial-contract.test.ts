@@ -56,7 +56,7 @@ test('editorial canonical JSON preserves Unicode and URL bytes and binds all app
 })
 
 test('editorial shared Python/TypeScript golden fixture has byte-exact publication and approval digests', async () => {
-  const fixture = JSON.parse(readFileSync(new URL('../../tests/fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
   const actual = await validateEditorialApproval(fixture.manifest, fixture.attestation)
   assert.equal(actual.publicationJson, fixture.expected.publication_json)
   assert.equal(actual.manifestSha256, fixture.expected.manifest_sha256)

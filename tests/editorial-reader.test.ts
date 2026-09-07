@@ -11,7 +11,7 @@ import type { ArchiveRow } from '../src/lib/content-archive'
 import type { PublicEditorial } from '../src/types/feed'
 import { createSqliteD1 } from './helpers/sqlite-d1'
 
-const fixture = JSON.parse(readFileSync(new URL('../../tests/fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
 const publication = fixture.manifest.publication
 const ID = publication.article_id
 const DATE = '2026-09-04T00:00:00Z'

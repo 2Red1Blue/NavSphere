@@ -7,7 +7,7 @@ import test from 'node:test'
 import { canonicalEditorialJson, parseEditorialJson, validateEditorialApproval, validateEditorialPublication } from '../src/lib/editorial-contract'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const fixture = JSON.parse(readFileSync(new URL('../../tests/fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
+const fixture = JSON.parse(readFileSync(new URL('./fixtures/editorial-publication-v1.json', import.meta.url), 'utf8'))
 const python = fileURLToPath(new URL('../../.venv/bin/python3', import.meta.url))
 
 function pythonCheck(value: unknown) {
