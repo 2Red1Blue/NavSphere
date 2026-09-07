@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { parseArchiveCli, runArchiveCli, PROJECT_ENV_FILE } from '../scripts/d1-cold-archive'
+import { makeCapacityPolicySnapshot } from '../src/lib/feed-archive-maintenance'
 
 const config = { feedUrl: 'https://example.com/api/feed', apiKey: 'fixture-key' }
 const ID = '0123456789abcdef'
@@ -11,10 +15,11 @@ test('CLI reads the parent Content OS project .env, not a nested NavSphere crede
   assert.notEqual(PROJECT_ENV_FILE, fileURLToPath(new URL('../.env', import.meta.url)))
 })
 
-test('archive CLI defaults read-only and compaction requires separate confirmations', () => {
+test('archive CLI defaults read-only and compaction requires separate confirmations plus a policy snapshot', () => {
   assert.deepEqual(parseArchiveCli([]), { mode: 'audit', limit: 20 })
   assert.throws(() => parseArchiveCli(['--mode', 'compact']), /CONFIRMATION_REQUIRED/)
-  assert.equal(parseArchiveCli(['--mode', 'compact', '--confirmed-recovery', '--confirmed-cold-reader']).mode, 'compact')
+  assert.throws(() => parseArchiveCli(['--mode', 'compact', '--confirmed-recovery', '--confirmed-cold-reader']), /CAPACITY_POLICY_REQUIRED/)
+  assert.equal(parseArchiveCli(['--mode', 'compact', '--confirmed-recovery', '--confirmed-cold-reader', '--capacity-policy-file', '/tmp/policy.json']).mode, 'compact')
   for (const args of [['--limit', '21'], ['--mode', 'delete'], ['--id', 'bad'], ['--mode', 'stage', '--mode', 'compact']]) {
     assert.throws(() => parseArchiveCli(args))
   }
@@ -51,6 +56,31 @@ test('stage is bounded, stops on budget/storage failure, and does not retry POST
   assert.equal(report.items[0].code, 'WRITE_BUDGET_EXHAUSTED')
   assert.equal(report.invalidDates, 3)
   assert.equal(report.scanned, 2)
+})
+
+test('automatic compact sends only a fresh audit policy snapshot and bounds candidates to its release target', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'navsphere-retention-'))
+  try {
+    const policy = makeCapacityPolicySnapshot(350_000_000, new Date())
+    const policyPath = join(dir, 'policy.json')
+    writeFileSync(policyPath, JSON.stringify({ capacityPolicy: policy }))
+    const options = parseArchiveCli(['--mode', 'compact', '--confirmed-recovery', '--confirmed-cold-reader',
+      '--capacity-policy-file', policyPath])
+    const calls: RequestInit[] = []
+    const report = await runArchiveCli(options, config, async (_url, init) => {
+      calls.push(init ?? {})
+      if (init?.method === 'GET') return new Response(JSON.stringify({ code: 'AUDIT_COMPLETED', candidates: [
+        { url_hash: ID, state: 'staged', bytes: policy.bytesToRelease },
+        { url_hash: 'abcdef0123456789', state: 'staged', bytes: 1 },
+      ], scanned: 2, invalidDates: 0, truncated: false }))
+      return new Response(JSON.stringify({ code: 'COMPACTED', url_hash: ID }))
+    })
+    assert.equal(report.status, 'completed')
+    assert.equal(report.items.length, 1)
+    assert.equal(report.moreCandidates, true)
+    assert.equal(calls.length, 2)
+    assert.deepEqual(JSON.parse(String((calls[1].headers as Record<string, string>)['X-Content-Archive-Capacity-Policy'])), policy)
+  } finally { rmSync(dir, { recursive: true, force: true }) }
 })
 
 test('inventory requires valid audit counters and never invents zero for missing metadata', async () => {

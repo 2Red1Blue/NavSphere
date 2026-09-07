@@ -9,8 +9,30 @@ import { D1_RETENTION_TIMESTAMP_CTES } from './d1-retention-sql'
 const DAY_MS = 86_400_000
 const ID_PATTERN = /^[a-f0-9]{16,64}$/
 const MAX_DAILY_WRITES = 100
+export const D1_CAPACITY_POLICY = {
+  ceilingBytes: 500_000_000,
+  highWatermarkBytes: 350_000_000,
+  targetBytes: 300_000_000,
+  criticalWatermarkBytes: 425_000_000,
+  maximumSnapshotAgeMs: DAY_MS,
+} as const
+export type CapacityPolicyDecision = 'hold' | 'compact'
+export type CapacityPolicySnapshot = {
+  version: 1
+  auditedAt: string
+  databaseBytes: number
+  ceilingBytes: number
+  highWatermarkBytes: number
+  targetBytes: number
+  criticalWatermarkBytes: number
+  policyDecision: CapacityPolicyDecision
+  bytesToRelease: number
+  criticalAlert: boolean
+}
 export type ArchiveAction = 'stage' | 'compact' | 'rehydrate'
-export type ArchiveOptions = { enabled?: boolean; compactEnabled?: boolean; now?: Date; retentionDays?: number }
+export type ArchiveOptions = {
+  enabled?: boolean; compactEnabled?: boolean; now?: Date; retentionDays?: number; capacityPolicy?: unknown
+}
 export type ArchiveResult = { code: string; status: number; url_hash?: string }
 
 function result(code: string, status = 200, id?: string): ArchiveResult {
@@ -25,6 +47,47 @@ function timing(options: ArchiveOptions) {
   const cutoff = new Date(now.getTime() - days * DAY_MS)
   if (!/^\d{4}-/.test(now.toISOString()) || !/^\d{4}-/.test(cutoff.toISOString())) throw new Error('INVALID_OPTIONS')
   return { now, days, cutoff }
+}
+
+function safeByteCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+}
+
+/** Build the only accepted policy shape from a measured D1 physical size. */
+export function makeCapacityPolicySnapshot(databaseBytes: number, auditedAt: Date): CapacityPolicySnapshot {
+  if (!safeByteCount(databaseBytes) || !(auditedAt instanceof Date) || !Number.isFinite(auditedAt.getTime())) {
+    throw new Error('INVALID_CAPACITY_POLICY')
+  }
+  const policyDecision: CapacityPolicyDecision = databaseBytes >= D1_CAPACITY_POLICY.highWatermarkBytes ? 'compact' : 'hold'
+  return {
+    version: 1, auditedAt: auditedAt.toISOString(), databaseBytes,
+    ceilingBytes: D1_CAPACITY_POLICY.ceilingBytes,
+    highWatermarkBytes: D1_CAPACITY_POLICY.highWatermarkBytes,
+    targetBytes: D1_CAPACITY_POLICY.targetBytes,
+    criticalWatermarkBytes: D1_CAPACITY_POLICY.criticalWatermarkBytes,
+    policyDecision,
+    bytesToRelease: policyDecision === 'compact' ? databaseBytes - D1_CAPACITY_POLICY.targetBytes : 0,
+    criticalAlert: databaseBytes >= D1_CAPACITY_POLICY.criticalWatermarkBytes,
+  }
+}
+
+/** Reject stale, forged or partial policy data before any cold-body read or D1 write. */
+export function validateCapacityPolicySnapshot(value: unknown, now: Date): CapacityPolicyDecision | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)
+    || !(now instanceof Date) || !Number.isFinite(now.getTime())) return null
+  const policy = value as Record<string, unknown>
+  const keys = Object.keys(policy).sort()
+  const expectedKeys = ['auditedAt', 'bytesToRelease', 'ceilingBytes', 'criticalAlert', 'criticalWatermarkBytes',
+    'databaseBytes', 'highWatermarkBytes', 'policyDecision', 'targetBytes', 'version']
+  if (keys.length !== expectedKeys.length || keys.some((key, index) => key !== expectedKeys[index])) return null
+  if (typeof policy.auditedAt !== 'string' || !safeByteCount(policy.databaseBytes)) return null
+  const auditedAt = new Date(policy.auditedAt)
+  if (!Number.isFinite(auditedAt.getTime()) || auditedAt.toISOString() !== policy.auditedAt
+    || auditedAt.getTime() > now.getTime() || now.getTime() - auditedAt.getTime() > D1_CAPACITY_POLICY.maximumSnapshotAgeMs) return null
+  let expected: CapacityPolicySnapshot
+  try { expected = makeCapacityPolicySnapshot(policy.databaseBytes, auditedAt) } catch { return null }
+  return Object.entries(expected).every(([key, expectedValue]) => policy[key] === expectedValue)
+    ? expected.policyDecision : null
 }
 
 /** Date.parse accepts 24:00 and some out-of-range offsets; retention must not. */
@@ -94,11 +157,16 @@ async function stage(db: D1Database, kv: ArchiveKV | undefined, row: ArchiveRow,
   return committed ? result('STAGED', 200, row.url_hash) : result('STATE_CHANGED', 409)
 }
 
-async function compact(db: D1Database, kv: ArchiveKV | undefined, row: ArchiveRow, now: Date): Promise<ArchiveResult> {
+async function compact(db: D1Database, kv: ArchiveKV | undefined, row: ArchiveRow, now: Date,
+  capacityPolicy: unknown): Promise<ArchiveResult> {
   if (!archivePointer(row)) return result('NOT_STAGED', 409)
   const archivedAt = timestamp(row.content_archived_at ?? '')
   if (archivedAt === null || now.getTime() - archivedAt < DAY_MS) return result('STAGING_TOO_RECENT', 409)
   if (row.content === null) return result('ALREADY_COLD', 200, row.url_hash)
+  if (capacityPolicy === undefined) return result('CAPACITY_POLICY_REQUIRED', 409)
+  const policyDecision = validateCapacityPolicySnapshot(capacityPolicy, now)
+  if (policyDecision === null) return result('INVALID_CAPACITY_POLICY', 400)
+  if (policyDecision !== 'compact') return result('CAPACITY_COMPACTION_NOT_REQUIRED', 409)
   // Uses the same integrity reader as public same-ID detail and recovery.
   const body = await readArchiveBody(kv, row)
   if (body !== row.content) throw new Error('ARCHIVE_UNAVAILABLE')
@@ -128,7 +196,7 @@ export async function maintainArchive(db: D1Database, kv: ArchiveKV | undefined,
     if (!row) return result('NOT_FOUND', 404)
     if (action !== 'rehydrate' && !eligible(row, clock.cutoff)) return result('NOT_ELIGIBLE', 409)
     if (action === 'stage') return await stage(db, kv, row, clock.now)
-    if (action === 'compact') return await compact(db, kv, row, clock.now)
+    if (action === 'compact') return await compact(db, kv, row, clock.now, options.capacityPolicy)
     return await rehydrate(db, kv, row)
   } catch {
     return result('ARCHIVE_UNAVAILABLE', 503)

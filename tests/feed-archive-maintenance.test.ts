@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 import type { ArchiveKV } from '../src/lib/content-archive'
-import { maintainArchive, archiveCandidates } from '../src/lib/feed-archive-maintenance'
+import { maintainArchive, archiveCandidates, makeCapacityPolicySnapshot } from '../src/lib/feed-archive-maintenance'
 import { handleArchiveRequest } from '../src/lib/feed-archive-http'
 import { createSqliteD1 } from './helpers/sqlite-d1'
 
@@ -11,6 +11,10 @@ const ID = '0123456789abcdef'
 const NOW = new Date('2026-09-04T12:00:00Z')
 const BODY = '旧正文\n引号\'与中文，不代表已获得全文发布许可。'
 const schema = readFileSync(new URL('../schema.sql', import.meta.url), 'utf8')
+
+function compactPolicy(auditedAt = NOW) {
+  return makeCapacityPolicySnapshot(350_000_000, auditedAt)
+}
 
 test('maintenance HTTP authenticates before any DB or KV access and defaults disabled', async () => {
   const env = { DB: { prepare() { throw new Error('must not query') } },
@@ -211,7 +215,9 @@ test('stage, delayed compact and rehydrate retain identity, quality and denied r
     assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', { enabled: true, now: NOW })).code, 'COMPACTION_DISABLED')
     assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', { enabled: true, compactEnabled: true, now: NOW })).code, 'STAGING_TOO_RECENT')
     const later = new Date(NOW.getTime() + 86_400_001)
-    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', { enabled: true, compactEnabled: true, now: later })).code, 'COMPACTED')
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', {
+      enabled: true, compactEnabled: true, now: later, capacityPolicy: compactPolicy(later),
+    })).code, 'COMPACTED')
     assert.equal(f.row().content, null)
     assert.equal((await maintainArchive(f.db, f.kv, ID, 'rehydrate', { enabled: true, now: later })).code, 'REHYDRATED')
     assert.equal(f.row().content, BODY)
@@ -263,9 +269,31 @@ test('corrupt archived object prevents compaction and rehydration', async () => 
     const key = String(f.row().content_archive_key)
     f.objects.set(key, '{}')
     assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', {
-      enabled: true, compactEnabled: true, now: new Date(NOW.getTime() + 86_400_001),
+      enabled: true, compactEnabled: true, now: new Date(NOW.getTime() + 86_400_001), capacityPolicy: compactPolicy(new Date(NOW.getTime() + 86_400_001)),
     })).code, 'ARCHIVE_UNAVAILABLE')
     assert.equal(f.row().content, BODY)
     assert.equal(f.objects.get(key), '{}')
+  } finally { f.close() }
+})
+
+test('compaction requires a fresh exact capacity-policy snapshot, not age alone', async () => {
+  const f = fixture()
+  try {
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'stage', { enabled: true, now: NOW })).code, 'STAGED')
+    const later = new Date(NOW.getTime() + 86_400_001)
+    const options = { enabled: true, compactEnabled: true, now: later }
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', options)).code, 'CAPACITY_POLICY_REQUIRED')
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', {
+      ...options, capacityPolicy: { ...compactPolicy(NOW), targetBytes: 299_999_999 },
+    })).code, 'INVALID_CAPACITY_POLICY')
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', {
+      ...options, capacityPolicy: makeCapacityPolicySnapshot(349_999_999, later),
+    })).code, 'CAPACITY_COMPACTION_NOT_REQUIRED')
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', {
+      ...options, capacityPolicy: compactPolicy(new Date(NOW.getTime() - 86_400_001)),
+    })).code, 'INVALID_CAPACITY_POLICY')
+    assert.equal((await maintainArchive(f.db, f.kv, ID, 'compact', {
+      ...options, capacityPolicy: compactPolicy(later),
+    })).code, 'COMPACTED')
   } finally { f.close() }
 })

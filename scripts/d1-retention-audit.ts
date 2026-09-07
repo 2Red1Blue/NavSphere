@@ -2,11 +2,11 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { D1_RETENTION_TIMESTAMP_CTES } from '../src/lib/d1-retention-sql'
+import { D1_CAPACITY_POLICY, makeCapacityPolicySnapshot } from '../src/lib/feed-archive-maintenance'
 import { runCommandWithLimits } from './production-gate'
 
 const PROJECT_DIR = dirname(dirname(fileURLToPath(import.meta.url)))
 const WRANGLER = join(PROJECT_DIR, 'node_modules', '.bin', 'wrangler')
-const CEILING_BYTES = 500_000_000
 const MAX_COMMAND_OUTPUT_BYTES = 128 * 1024
 const SAFETY = {
   archiveEnabled: false,
@@ -47,7 +47,12 @@ export type D1RetentionAuditResult = typeof SAFETY & ({
     ceilingBytes: number
     utilizationPercent: number
     status: 'normal' | 'warning' | 'critical' | 'limit'
+    policyDecision: 'hold' | 'compact'
+    targetBytes: number
+    bytesToRelease: number
+    criticalAlert: boolean
   }
+  capacityPolicy: ReturnType<typeof makeCapacityPolicySnapshot>
   query: { rowsRead: number; rowsWritten: 0; changedDb: false }
 })
 
@@ -171,15 +176,25 @@ export async function runD1RetentionAudit(options: D1RetentionAuditOptions = {})
   const parsed = parseResponse(output.stdout)
   if (!parsed) return failure('INVALID_RESPONSE')
   const { bytes, counts, rowsRead } = parsed
+  const frozenAuditTime = new Date(auditedAt)
+  const capacityPolicy = makeCapacityPolicySnapshot(bytes, frozenAuditTime)
   return {
     ...SAFETY, status: 'completed', code: 'AUDIT_COMPLETED',
     auditedAt, cutoff, retentionDays, counts,
-    capacity: {
-      bytes, ceilingBytes: CEILING_BYTES, utilizationPercent: bytes / CEILING_BYTES * 100,
-      status: bytes >= CEILING_BYTES ? 'limit'
-        : bytes >= CEILING_BYTES * 0.85 ? 'critical'
-          : bytes >= CEILING_BYTES * 0.7 ? 'warning' : 'normal',
-    },
+    capacity: (() => {
+      return {
+        bytes, ceilingBytes: D1_CAPACITY_POLICY.ceilingBytes,
+        utilizationPercent: bytes / D1_CAPACITY_POLICY.ceilingBytes * 100,
+        status: bytes >= D1_CAPACITY_POLICY.ceilingBytes ? 'limit'
+          : bytes >= D1_CAPACITY_POLICY.criticalWatermarkBytes ? 'critical'
+            : bytes >= D1_CAPACITY_POLICY.highWatermarkBytes ? 'warning' : 'normal',
+        policyDecision: capacityPolicy.policyDecision,
+        targetBytes: capacityPolicy.targetBytes,
+        bytesToRelease: capacityPolicy.bytesToRelease,
+        criticalAlert: capacityPolicy.criticalAlert,
+      }
+    })(),
+    capacityPolicy,
     query: { rowsRead, rowsWritten: 0, changedDb: false },
   }
 }

@@ -25,9 +25,18 @@ export async function handleArchiveRequest(request: Request, getEnv: () => Cloud
     const id = url.searchParams.get('id') ?? ''
     if (request.method !== 'POST' || Array.from(url.searchParams).length !== 2 || !action
       || !['stage', 'compact', 'rehydrate'].includes(action)) return reply({ code: 'INVALID_REQUEST' }, 400)
+    const encodedPolicy = request.headers.get('X-Content-Archive-Capacity-Policy')
+    let capacityPolicy: unknown = undefined
+    if (encodedPolicy !== null) {
+      if (encodedPolicy.length > 2_048) capacityPolicy = null
+      else {
+        try { capacityPolicy = JSON.parse(encodedPolicy) } catch { capacityPolicy = null }
+      }
+    }
     const outcome = await maintainArchive(env.DB, env.CONTENT_ARCHIVE, id, action as ArchiveAction, {
       enabled: env.CONTENT_ARCHIVE_ENABLED === 'true',
       compactEnabled: env.CONTENT_ARCHIVE_COMPACT_ENABLED === 'true',
+      capacityPolicy,
     })
     return reply(outcome, outcome.status)
   } catch { return reply({ code: 'ARCHIVE_UNAVAILABLE' }, 503) }

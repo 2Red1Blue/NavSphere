@@ -1,8 +1,12 @@
 import { dirname, resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
+import { validateCapacityPolicySnapshot } from '../src/lib/feed-archive-maintenance'
+import type { CapacityPolicySnapshot } from '../src/lib/feed-archive-maintenance'
+
 type Mode = 'audit' | 'stage' | 'compact' | 'rehydrate'
-type CliOptions = { mode: Mode; limit: number; id?: string }
+type CliOptions = { mode: Mode; limit: number; id?: string; capacityPolicyFile?: string }
 type Config = { feedUrl: string; apiKey: string }
 type Item = { url_hash: string; code: string }
 type InventoryStats = { scanned: number; invalidDates: number; truncated: boolean }
@@ -16,7 +20,8 @@ export const PROJECT_ENV_FILE = resolve(dirname(fileURLToPath(import.meta.url)),
 const OUTCOME_CODES = new Set(['STAGED', 'ALREADY_STAGED', 'ALREADY_COLD', 'COMPACTED', 'REHYDRATED',
   'ALREADY_HOT', 'ARCHIVE_DISABLED', 'COMPACTION_DISABLED', 'STAGING_TOO_RECENT', 'STATE_CHANGED',
   'NOT_FOUND', 'NOT_STAGED', 'NO_CONTENT', 'NOT_ELIGIBLE', 'WRITE_BUDGET_EXHAUSTED',
-  'ARCHIVE_UNAVAILABLE', 'UNAUTHORIZED', 'INVALID_REQUEST', 'INVALID_OPTIONS'])
+  'ARCHIVE_UNAVAILABLE', 'UNAUTHORIZED', 'INVALID_REQUEST', 'INVALID_OPTIONS', 'CAPACITY_POLICY_REQUIRED',
+  'INVALID_CAPACITY_POLICY', 'CAPACITY_COMPACTION_NOT_REQUIRED'])
 const SUCCESS_CODES: Record<Exclude<Mode, 'audit'>, readonly string[]> = {
   stage: ['STAGED', 'ALREADY_STAGED'], compact: ['COMPACTED', 'ALREADY_COLD'],
   rehydrate: ['REHYDRATED', 'ALREADY_HOT'],
@@ -26,6 +31,7 @@ const ERROR_STATUS: Record<string, number> = {
   STATE_CHANGED: 409, NOT_FOUND: 404, NOT_STAGED: 409, NO_CONTENT: 409,
   NOT_ELIGIBLE: 409, WRITE_BUDGET_EXHAUSTED: 429, ARCHIVE_UNAVAILABLE: 503,
   UNAUTHORIZED: 401, INVALID_REQUEST: 400, INVALID_OPTIONS: 400, ALREADY_COLD: 409,
+  CAPACITY_POLICY_REQUIRED: 409, INVALID_CAPACITY_POLICY: 400, CAPACITY_COMPACTION_NOT_REQUIRED: 409,
 }
 
 export function parseArchiveCli(argv: string[]): CliOptions {
@@ -41,13 +47,27 @@ export function parseArchiveCli(argv: string[]): CliOptions {
     if (flag === '--mode' && ['audit', 'stage', 'compact', 'rehydrate'].includes(value)) options.mode = value as Mode
     else if (flag === '--id' && ID.test(value ?? '')) options.id = value
     else if (flag === '--limit' && /^(?:[1-9]|1[0-9]|20)$/.test(value ?? '')) options.limit = Number(value)
+    else if (flag === '--capacity-policy-file' && value && value.length <= 1_024) options.capacityPolicyFile = value
     else throw new Error('INVALID_OPTIONS')
   }
   if (options.mode === 'compact' && (!seen.has('--confirmed-recovery') || !seen.has('--confirmed-cold-reader'))) {
     throw new Error('CONFIRMATION_REQUIRED')
   }
+  if (options.mode === 'compact' && !options.capacityPolicyFile) throw new Error('CAPACITY_POLICY_REQUIRED')
+  if (options.mode !== 'compact' && options.capacityPolicyFile) throw new Error('INVALID_OPTIONS')
   if (options.mode === 'rehydrate' && !options.id) throw new Error('EXACT_ID_REQUIRED')
   return options
+}
+
+function readCapacityPolicySnapshot(path: string): CapacityPolicySnapshot | null {
+  try {
+    const raw = readFileSync(path, 'utf8')
+    if (Buffer.byteLength(raw) > MAX_RESPONSE_BYTES) return null
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    const policy = (parsed as Record<string, unknown>).capacityPolicy ?? parsed
+    return validateCapacityPolicySnapshot(policy, new Date()) === 'compact' ? policy as CapacityPolicySnapshot : null
+  } catch { return null }
 }
 
 function failed(code: string, items: Item[] = []): Report { return { status: 'failed', code, items } }
@@ -102,12 +122,19 @@ export async function runArchiveCli(options: CliOptions, config: Config, fetchIm
       || !/^\/api\/feed\/?$/.test(endpoint.pathname) || !config.apiKey.trim()) return failed('INVALID_CONFIGURATION')
     endpoint.pathname = '/api/feed/archive'
   } catch { return failed('INVALID_CONFIGURATION') }
+  const capacityPolicy = options.mode === 'compact' && options.capacityPolicyFile
+    ? readCapacityPolicySnapshot(options.capacityPolicyFile) : undefined
+  if (options.mode === 'compact' && !capacityPolicy) return failed('INVALID_CAPACITY_POLICY')
   const request = async (url: URL, method: string) => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20_000)
     try {
       const response = await fetchImpl(url, { method, redirect: 'error', cache: 'no-store', signal: controller.signal,
-        headers: { Authorization: `Bearer ${config.apiKey}` } })
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          ...(method === 'POST' && capacityPolicy
+            ? { 'X-Content-Archive-Capacity-Policy': JSON.stringify(capacityPolicy) } : {}),
+        } })
       return { ok: response.ok, status: response.status, value: await bodyObject(response) }
     } finally { clearTimeout(timer) }
   }
@@ -128,8 +155,17 @@ export async function runArchiveCli(options: CliOptions, config: Config, fetchIm
       if (options.mode === 'audit') return { status: 'completed', code: 'AUDIT_COMPLETED', items,
         candidates: rows.length, ...stats }
       const selected = rows.filter(row => row.state === (options.mode === 'stage' ? 'hot' : 'staged'))
-      moreCandidates = stats.truncated || selected.length > options.limit
-      ids = selected.slice(0, options.limit).map(row => row.url_hash)
+      const capacityBounded = options.mode === 'compact' && capacityPolicy
+        ? (() => {
+          let remaining = capacityPolicy.bytesToRelease
+          return selected.filter((row) => {
+            if (row.bytes > remaining) return false
+            remaining -= row.bytes
+            return true
+          })
+        })() : selected
+      moreCandidates = stats.truncated || selected.length > capacityBounded.length || capacityBounded.length > options.limit
+      ids = capacityBounded.slice(0, options.limit).map(row => row.url_hash)
     }
     for (const id of ids) {
       const url = new URL(endpoint)

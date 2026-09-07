@@ -56,6 +56,16 @@ test('retention audit executes one fixed production SELECT and returns only allo
   assert.equal(result.capacity.bytes, META.size_after)
   assert.equal(result.capacity.ceilingBytes, 500_000_000)
   assert.equal(result.capacity.status, 'normal')
+  assert.equal(result.capacity.policyDecision, 'hold')
+  assert.equal(result.capacity.targetBytes, 300_000_000)
+  assert.equal(result.capacity.bytesToRelease, 0)
+  assert.equal(result.capacity.criticalAlert, false)
+  assert.deepEqual(result.capacityPolicy, {
+    version: 1, auditedAt: NOW.toISOString(), databaseBytes: META.size_after,
+    ceilingBytes: 500_000_000, highWatermarkBytes: 350_000_000,
+    targetBytes: 300_000_000, criticalWatermarkBytes: 425_000_000,
+    policyDecision: 'hold', bytesToRelease: 0, criticalAlert: false,
+  })
   assert.deepEqual(result.query, { rowsRead: 10, rowsWritten: 0, changedDb: false })
   assert.equal(result.archiveEnabled, false)
   assert.equal(result.deletionEnabled, false)
@@ -71,17 +81,22 @@ test('retention audit executes one fixed production SELECT and returns only allo
   assert.doesNotMatch(calls[0].args.at(-1)!, /\b(DELETE|UPDATE|INSERT|REPLACE|CREATE|DROP|ALTER|PRAGMA)\b/i)
 })
 
-test('capacity thresholds use physical bytes and never enable deletion', async () => {
-  for (const [bytes, status] of [
-    [0, 'normal'], [349_999_999, 'normal'], [350_000_000, 'warning'],
-    [424_999_999, 'warning'], [425_000_000, 'critical'],
-    [499_999_999, 'critical'], [500_000_000, 'limit'], [600_000_000, 'limit'],
-  ] as const) {
+test('capacity thresholds emit an exact compact-to-target policy without enabling deletion', async () => {
+  const cases: Array<[number, 'normal' | 'warning' | 'critical' | 'limit', 'hold' | 'compact', number, boolean]> = [
+    [0, 'normal', 'hold', 300_000_000, false], [349_999_999, 'normal', 'hold', 300_000_000, false], [350_000_000, 'warning', 'compact', 300_000_000, false],
+    [424_999_999, 'warning', 'compact', 300_000_000, false], [425_000_000, 'critical', 'compact', 300_000_000, true],
+    [499_999_999, 'critical', 'compact', 300_000_000, true], [500_000_000, 'limit', 'compact', 300_000_000, true], [600_000_000, 'limit', 'compact', 300_000_000, true],
+  ]
+  for (const [bytes, status, policyDecision, targetBytes, criticalAlert] of cases) {
     const result = await auditResponse([envelope(COUNTS, { ...META, size_after: bytes })])
     assert.equal(result.status, 'completed')
     if (result.status !== 'completed') assert.fail('Expected a completed audit')
     assert.equal(result.capacity.status, status)
     assert.equal(result.capacity.utilizationPercent, bytes / 500_000_000 * 100)
+    assert.equal(result.capacity.policyDecision, policyDecision)
+    assert.equal(result.capacity.targetBytes, targetBytes)
+    assert.equal(result.capacity.bytesToRelease, policyDecision === 'compact' ? bytes - targetBytes : 0)
+    assert.equal(result.capacity.criticalAlert, criticalAlert)
     assert.equal(result.deletionEnabled, false)
   }
 })
