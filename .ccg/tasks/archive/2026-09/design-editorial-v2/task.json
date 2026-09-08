@@ -1,0 +1,12 @@
+{
+  "id": "design-editorial-v2",
+  "title": "设计完整阅读、自然成稿与可追溯审查的 Editorial v2",
+  "status": "completed",
+  "complexity": "L",
+  "risk": "low",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付技术与设计提案；尚未实施，Claude 分析超时且身份不匹配已记录",
+  "createdAt": "2026-09-08T13:22:38Z",
+  "branch": "main"
+}
