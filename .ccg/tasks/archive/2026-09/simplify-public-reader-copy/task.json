@@ -1,0 +1,12 @@
+{
+  "id": "simplify-public-reader-copy",
+  "title": "公开阅读页使用文章标题并移除内部审稿术语",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "frontend",
+  "currentPhase": "completed",
+  "nextAction": "归档任务",
+  "createdAt": "2026-09-08T03:30:29Z",
+  "branch": "main"
+}
