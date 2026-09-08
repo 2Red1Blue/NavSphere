@@ -1,0 +1,12 @@
+{
+  "id": "design-agent-invocation-ledger-v2",
+  "title": "设计 Agent Invocation Ledger V2 重构方案",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付账本 V2 重构设计；未实施，双模型分析超时已记录",
+  "createdAt": "2026-09-09T00:00:00Z",
+  "branch": "main"
+}
