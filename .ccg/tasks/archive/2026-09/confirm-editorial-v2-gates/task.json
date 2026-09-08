@@ -1,0 +1,12 @@
+{
+  "id": "confirm-editorial-v2-gates",
+  "title": "核对 Editorial v2 四个放行缺口与迁移恢复建议",
+  "status": "completed",
+  "complexity": "S",
+  "risk": "low",
+  "domain": "design-review",
+  "currentPhase": "completed",
+  "nextAction": "交付确认与修正建议；未改主设计，未开工；双模型限制已记录",
+  "createdAt": "2026-09-08T15:43:18Z",
+  "branch": "main"
+}
