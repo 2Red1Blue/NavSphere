@@ -1,0 +1,12 @@
+{
+  "id": "research-editorial-writing-patterns",
+  "title": "调研开源深度研究与文章写作流程，校正写手改造方案",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "low",
+  "domain": "research",
+  "currentPhase": "completed",
+  "nextAction": "交付调研与修正建议；Claude 通道身份验证限制已记录",
+  "createdAt": "2026-09-08T13:03:21Z",
+  "branch": "main"
+}
