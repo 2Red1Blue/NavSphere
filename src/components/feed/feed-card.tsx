@@ -1,9 +1,12 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Star } from 'lucide-react'
 import type { Article } from '@/types/feed'
+import { hasDisplayScore, hasScoreBreakdown } from '@/lib/feed-view'
+import { PublicArticleTitle } from './public-article-title'
 
 interface FeedCardProps {
   article: Article
@@ -53,7 +56,7 @@ export function FeedCard({ article, className }: FeedCardProps) {
           <div className="flex-1 min-w-0">
             {/* Title */}
             <h3 className="font-semibold text-base leading-snug group-hover:text-primary transition-colors line-clamp-2">
-              {article.title}
+              <PublicArticleTitle article={article} />
             </h3>
 
             {/* Meta */}
@@ -68,7 +71,7 @@ export function FeedCard({ article, className }: FeedCardProps) {
             </div>
           </div>
 
-          <ScoreBadge score={article.score} />
+          {hasDisplayScore(article.score) && <ScoreBadge score={article.score} />}
         </div>
 
         {/* Summary */}
@@ -79,7 +82,7 @@ export function FeedCard({ article, className }: FeedCardProps) {
         )}
 
         {/* Score bars */}
-        <div className="flex gap-3">
+        {hasDisplayScore(article.score) && hasScoreBreakdown(article) && <div className="flex gap-3">
           {[
             { label: '信号', value: article.signal, max: 10 },
             { label: '新颖', value: article.novelty, max: 10 },
@@ -96,7 +99,7 @@ export function FeedCard({ article, className }: FeedCardProps) {
               <span className="text-[10px] text-muted-foreground w-3 text-right">{dim.value}</span>
             </div>
           ))}
-        </div>
+        </div>}
       </article>
     </Link>
   )

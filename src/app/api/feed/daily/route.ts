@@ -13,6 +13,7 @@ export type DailySectionKey = (typeof DAILY_SECTION_KEYS)[number]
 export interface DailyArticle {
   url_hash: string
   title: string
+  original_title: string | null
   summary: string | null
   takeaway: string | null
   source: string
@@ -135,7 +136,7 @@ async function archiveResponse(db: D1Database) {
 async function digestResponse(db: D1Database, date: string) {
   const articleStatement = db.prepare(`
     SELECT
-      url_hash, title, summary, takeaway, source, url, original_url, original_url_provenance,
+      url_hash, title, original_title, summary, takeaway, source, url, original_url, original_url_provenance,
       category, topic, type,
       score, published_at, discovered_at
     FROM articles

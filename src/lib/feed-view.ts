@@ -16,6 +16,29 @@ export const INTERNAL_SCORE_MAX = 30
 export const DISPLAY_SCORE_MAX = 100
 export const SHANGHAI_TIME_ZONE = 'Asia/Shanghai'
 
+export interface PublicTitleSource {
+  title: string | null
+  /** Optional so cached pre-deploy API payloads safely fall back to title. */
+  original_title?: string | null
+}
+
+export function getArticleDisplayTitle(article: PublicTitleSource): string {
+  const upstream = typeof article.original_title === 'string' ? article.original_title.trim() : ''
+  const internal = typeof article.title === 'string' ? article.title.trim() : ''
+  return upstream || internal || '未命名文章'
+}
+
+/** A stored zero represents legacy/unscored content, not a trustworthy 0/100 review. */
+export function hasDisplayScore(score: unknown): score is number {
+  return typeof score === 'number' && Number.isFinite(score) && score > 0
+}
+
+export function hasScoreBreakdown(article: { signal?: unknown; novelty?: unknown; usefulness?: unknown }): boolean {
+  const values = [article.signal, article.novelty, article.usefulness]
+  return values.every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 10)
+    && values.some(value => typeof value === 'number' && value > 0)
+}
+
 export type ScoreTier = 'must-read' | 'recommended' | 'notable' | 'standard'
 
 export interface ScoreTierMeta {
@@ -34,7 +57,8 @@ export const SCORE_TIERS: Record<ScoreTier, ScoreTierMeta> = {
 export function toDisplayScore(score: number): number {
   if (!Number.isFinite(score)) return 0
   const boundedScore = Math.min(INTERNAL_SCORE_MAX, Math.max(0, score))
-  return Math.round((boundedScore * DISPLAY_SCORE_MAX) / INTERNAL_SCORE_MAX)
+  if (boundedScore === 0) return 0
+  return Math.max(1, Math.round((boundedScore * DISPLAY_SCORE_MAX) / INTERNAL_SCORE_MAX))
 }
 
 export function getScoreTier(score: number): ScoreTierMeta {
@@ -83,7 +107,7 @@ const SOURCE_TYPES: Record<SourceTypeKey, SourceTypeMeta> = {
   media: { key: 'media', label: '行业媒体' },
   community: { key: 'community', label: '社区观点' },
   aggregator: { key: 'aggregator', label: '聚合来源' },
-  unknown: { key: 'unknown', label: '来源待核验' },
+  unknown: { key: 'unknown', label: '其他来源' },
 }
 
 function hostnameFromUrl(url?: string): string {

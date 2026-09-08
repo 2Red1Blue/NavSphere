@@ -55,3 +55,5 @@ build/cache/
 /.venv/
 /.npm_cache/
 .wrangler/
+/.playwright-cli/
+/output/playwright/

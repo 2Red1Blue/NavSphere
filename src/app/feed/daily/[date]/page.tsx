@@ -5,23 +5,13 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from 'lucide-react'
 import { FeedMasthead } from '@/components/feed/feed-masthead'
+import { DailyArticleItem, type DailyArticleItemData } from '@/components/feed/daily-article-item'
 
 export const runtime = 'edge'
 
 type SectionKey = 'models' | 'products' | 'industry' | 'insights'
 
-interface DailyArticle {
-  url_hash: string
-  title: string
-  summary: string | null
-  takeaway: string | null
-  source: string
-  category: string
-  topic: string | null
-  type: string | null
-  displayScore: number
-  discovered_at: string
-}
+type DailyArticle = DailyArticleItemData
 
 interface DailyDigest {
   date: string
@@ -71,34 +61,7 @@ function Section({ meta, articles }: { meta: (typeof SECTION_META)[number]; arti
         <ol className="divide-y divide-border/70">
           {articles.map((article) => (
             <li className="py-6 first:pt-0 last:pb-0" key={article.url_hash}>
-              <article>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground/80">{article.source}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{article.category || '综合'}</span>
-                  <span aria-hidden="true">·</span>
-                  <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">AI {article.displayScore}</span>
-                </div>
-                <h3 className="feed-display mt-2 text-xl font-semibold leading-relaxed">
-                  <Link
-                    href={`/feed/${article.url_hash}`}
-                    className="decoration-[hsl(var(--feed-accent)/.5)] underline-offset-4 transition-colors hover:text-[hsl(var(--feed-accent))] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))] focus-visible:ring-offset-4"
-                  >
-                    {article.title}
-                  </Link>
-                </h3>
-                {article.summary ? (
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{article.summary}</p>
-                ) : (
-                  <p className="mt-3 text-sm italic text-muted-foreground">暂无摘要，可进入详情查看来源信息。</p>
-                )}
-                {article.takeaway && (
-                  <p className="mt-3 border-l-2 border-amber-500/70 pl-3 text-sm leading-6 text-foreground/85">
-                    <span className="mr-2 text-xs font-semibold text-amber-700 dark:text-amber-400">推荐理由</span>
-                    {article.takeaway}
-                  </p>
-                )}
-              </article>
+              <DailyArticleItem article={article} />
             </li>
           ))}
         </ol>

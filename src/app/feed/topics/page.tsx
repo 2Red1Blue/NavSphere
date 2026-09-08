@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight, Boxes, ChevronLeft, ChevronRight, List, Search } from 'lucide-react'
 import { FeedMasthead } from '@/components/feed/feed-masthead'
+import { TopicReadingArticle } from '@/components/feed/topic-reading-article'
 import { TopicSpace } from '@/components/feed/topic-space'
 import { parseFeedTopics, topicFeedUrl, topicPageUrl, type FeedTopic } from '@/lib/topic-explorer'
-import { formatShanghaiTime } from '@/lib/feed-view'
 import type { Article } from '@/types/feed'
 
 type ReadingState = { topic: string; status: 'loading' } | { topic: string; status: 'error' } | { topic: string; status: 'ready'; articles: Article[] }
@@ -141,12 +141,7 @@ function TopicExplorer() {
                 {visibleReading.status === 'loading' ? <p role="status" className="feed-muted py-6 text-sm">正在加载相关文章…</p>
                   : visibleReading.status === 'error' ? <div role="alert" className="py-6 text-sm"><p>相关文章暂时加载失败。</p><button className="topic-text-button mt-3" onClick={() => setReadingRetry(readingRetry + 1)}>重试文章</button></div>
                   : visibleReading.articles.length === 0 ? <p className="feed-muted py-6 text-sm">当前没有可展示的相关文章。</p>
-                  : visibleReading.articles.map(article => <article key={article.url_hash} className="topic-reading-article"><Link href={`/feed/${article.url_hash}`}>
-                    <p className="feed-muted mb-2 text-xs">{article.source} · <time dateTime={article.discovered_at}>{formatShanghaiTime(article.discovered_at)}</time></p>
-                    <h3 className="text-lg font-semibold leading-relaxed">{article.title}</h3>
-                    {article.summary && <p className="feed-muted mt-2 line-clamp-2 text-sm leading-7">{article.summary}</p>}
-                    <span className="topic-reading-link">阅读全文 <ArrowUpRight className="h-3 w-3" aria-hidden="true" /></span>
-                  </Link></article>)}
+                  : visibleReading.articles.map(article => <TopicReadingArticle key={article.url_hash} article={article} />)}
               </div>
               <Link className="topic-reading-all" href={`/feed?${new URLSearchParams({ topic: selected.name })}`}>浏览「{selected.name}」全部文章 <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             </section>}

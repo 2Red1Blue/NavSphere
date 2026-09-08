@@ -1,9 +1,10 @@
 'use client'
 
+import React from 'react'
 import { useId, useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, ChevronDown, Sparkles } from 'lucide-react'
-import { formatShanghaiTime, getCategoryLabel, toDisplayScore } from '@/lib/feed-view'
+import { formatShanghaiTime, getArticleDisplayTitle, getCategoryLabel, hasDisplayScore, toDisplayScore } from '@/lib/feed-view'
 import type { Article } from '@/types/feed'
 
 interface TimelineCardProps {
@@ -15,16 +16,16 @@ interface TimelineCardProps {
 export default function TimelineCard({ article, compact = false, index = 0 }: TimelineCardProps) {
   const [expanded, setExpanded] = useState(false)
   const previewId = useId()
+  const title = getArticleDisplayTitle(article)
   return (
     <article className={`feed-story group feed-hairline border-b px-5 sm:px-7 last:border-b-0 ${compact ? 'py-4' : 'py-5 sm:py-6'}`} style={{ animationDelay: `${Math.min(index, 4) * 35}ms` }}>
       <Link
         href={`/feed/${article.url_hash}`}
         className="block rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]"
-        aria-label={`查看详情：${article.title}`}
+        aria-label={`查看详情：${title}`}
       >
         <div className="feed-muted mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-          <span className="font-medium text-[hsl(var(--feed-ink))]">{article.source || '来源待核验'}</span>
-          <span aria-hidden="true">·</span>
+          {article.source && <><span className="font-medium text-[hsl(var(--feed-ink))]">{article.source}</span><span aria-hidden="true">·</span></>}
           <time dateTime={article.discovered_at} title="北京时间">{formatShanghaiTime(article.discovered_at)}</time>
           {article.featured === 1 && (
             <span className="feed-accent ml-1 inline-flex items-center gap-1 rounded bg-[hsl(var(--feed-accent)/.08)] px-1.5 py-0.5">
@@ -34,7 +35,7 @@ export default function TimelineCard({ article, compact = false, index = 0 }: Ti
         </div>
         <div className="flex items-start gap-5">
           <h3 className={`feed-display min-w-0 flex-1 font-semibold leading-[1.5] tracking-[-0.015em] [overflow-wrap:anywhere] transition-colors group-hover:text-[hsl(var(--feed-accent))] ${compact ? 'text-lg' : 'text-[20px] sm:text-[22px]'}`}>
-            {article.title}
+            {title}
           </h3>
           <ArrowUpRight className="feed-muted mt-2 hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" />
         </div>
@@ -50,7 +51,7 @@ export default function TimelineCard({ article, compact = false, index = 0 }: Ti
             className="feed-accent inline-flex min-h-9 items-center gap-1 rounded-md px-1 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--feed-accent))]">
             {expanded ? '收起导读' : '展开导读'}<ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
           </button>}
-          <span className="ml-auto tabular-nums" title="系统综合评分，不代表事实核验结论">评分 {toDisplayScore(article.score)}/100</span>
+          {hasDisplayScore(article.score) && <span className="ml-auto tabular-nums" title="系统综合评分">评分 {toDisplayScore(article.score)}/100</span>}
         </div>
     </article>
   )

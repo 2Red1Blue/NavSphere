@@ -13,6 +13,7 @@ function article(overrides: Partial<DailyArticle> = {}): DailyArticle {
   return {
     url_hash: 'a'.repeat(16),
     title: 'AI product update',
+    original_title: null,
     summary: 'Summary',
     takeaway: 'Why it matters',
     source: 'Official Blog',
@@ -90,4 +91,14 @@ test('daily projection retains source identity and original evidence without cha
   assert.equal(view.original_url, selected.original_url)
   assert.equal(view.original_url_provenance, selected.original_url_provenance)
   assert.equal(view.score, selected.score)
+})
+
+test('daily projection uses a nonempty upstream title when available', () => {
+  const digest = buildDailyDigest('2026-08-31', [article({
+    title: '整理帖称某事',
+    original_title: '上游文章标题',
+  })])
+  const [view] = dailySectionKeys.flatMap((section) => digest.sections[section])
+  assert.equal(view.title, '整理帖称某事')
+  assert.equal(view.original_title, '上游文章标题')
 })

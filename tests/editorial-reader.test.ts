@@ -331,16 +331,18 @@ test('cold archive editorial fallback rechecks global withdrawal and fails close
   }
 })
 
-test('structured reader labels attribution and uncertainty with safe exact source links', () => {
+test('structured reader keeps useful prose while hiding internal review metadata', () => {
   const editorial: PublicEditorial = { ...publication, revision: 1, published_at: DATE }
   const html = renderToStaticMarkup(createElement(EditorialBrief, { editorial }))
-  assert.match(html, /本站整理/)
-  assert.match(html, /独立新闻短稿/)
+  assert.match(html, /内容解读/)
   assert.match(html, /分析与判断/)
   assert.match(html, /不确定性与局限/)
-  assert.match(html, /不代表独立复核/)
+  assert.match(html, /论文中的结果来自作者自行报告/)
+  assert.match(html, /相关来源/)
   assert.ok(html.includes('https://papers.example.test/study?x=1&amp;y=(2)#part'))
   assert.match(html, /rel="noopener noreferrer"/)
+  assert.doesNotMatch(html, /作者报告实验结果，仍需独立复核/)
+  assert.doesNotMatch(html, /第\s*1\s*版|依据以下材料整理|不代表独立复核|整理者标注|一手材料|二手材料|aria-label="证据/)
   assert.doesNotMatch(html, /<script|<iframe|<img|needs_human_review|private-test-reviewer|dangerouslySetInnerHTML/)
 })
 

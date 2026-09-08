@@ -4,7 +4,10 @@ import test from 'node:test'
 import {
   getCategoryLabel,
   getDailySection,
+  getArticleDisplayTitle,
   getScoreTier,
+  hasDisplayScore,
+  hasScoreBreakdown,
   groupArticlesByShanghaiDate,
   inferSourceType,
   partitionDailyArticles,
@@ -24,6 +27,7 @@ const baseArticle = {
 
 test('30-point scores convert to bounded 100-point display scores', () => {
   assert.equal(toDisplayScore(0), 0)
+  assert.equal(toDisplayScore(0.1), 1)
   assert.equal(toDisplayScore(15), 50)
   assert.equal(toDisplayScore(24), 80)
   assert.equal(toDisplayScore(27), 90)
@@ -31,6 +35,30 @@ test('30-point scores convert to bounded 100-point display scores', () => {
   assert.equal(toDisplayScore(-1), 0)
   assert.equal(toDisplayScore(31), 100)
   assert.equal(toDisplayScore(Number.NaN), 0)
+})
+
+test('public title prefers the upstream article title and safely falls back', () => {
+  assert.equal(getArticleDisplayTitle({ title: '整理帖称某事', original_title: '原文标题' }), '原文标题')
+  assert.equal(getArticleDisplayTitle({ title: '站内标题', original_title: '  ' }), '站内标题')
+  assert.equal(getArticleDisplayTitle({ title: ' 站内标题 ' }), '站内标题')
+  assert.equal(getArticleDisplayTitle({ title: '  ' }), '未命名文章')
+  assert.equal(getArticleDisplayTitle({ title: null }), '未命名文章')
+})
+
+test('zero and invalid scores are treated as unavailable in public UI', () => {
+  assert.equal(hasDisplayScore(1), true)
+  assert.equal(hasDisplayScore(0), false)
+  assert.equal(hasDisplayScore(0.1), true)
+  assert.equal(hasDisplayScore(0.2), true)
+  assert.equal(hasDisplayScore(-1), false)
+  assert.equal(hasDisplayScore(Number.NaN), false)
+})
+
+test('score breakdowns require three finite bounded dimensions', () => {
+  assert.equal(hasScoreBreakdown({ signal: 0, novelty: 5, usefulness: 10 }), true)
+  assert.equal(hasScoreBreakdown({ signal: 0, novelty: 0, usefulness: 0 }), false)
+  assert.equal(hasScoreBreakdown({ signal: null, novelty: 5, usefulness: 10 }), false)
+  assert.equal(hasScoreBreakdown({ signal: 11, novelty: 5, usefulness: 10 }), false)
 })
 
 test('score tiers use the same internal-to-display boundary', () => {
@@ -89,5 +117,5 @@ test('category and source labels preserve useful fallbacks', () => {
   assert.equal(inferSourceType('GitHub', 'https://github.com/example/repo').key, 'code')
   assert.equal(inferSourceType('Reuters', 'https://reuters.com/technology').key, 'media')
   assert.equal(inferSourceType('Uncatalogued source', 'not a url').key, 'unknown')
-  assert.equal(inferSourceType('Uncatalogued source', 'not a url').label, '来源待核验')
+  assert.equal(inferSourceType('Uncatalogued source', 'not a url').label, '其他来源')
 })

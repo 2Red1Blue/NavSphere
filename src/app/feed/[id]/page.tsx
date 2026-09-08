@@ -13,11 +13,13 @@ import { Button } from '@/registry/new-york/ui/button'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
 import { FeedError } from '@/components/feed/feed-error'
 import { EditorialBrief } from '@/components/feed/editorial-brief'
+import { PublicArticleTitle } from '@/components/feed/public-article-title'
 import {
   getCategoryLabel,
   getScoreTier,
   getSourceLink,
-  inferSourceType,
+  hasDisplayScore,
+  hasScoreBreakdown,
   SHANGHAI_TIME_ZONE,
   toDisplayScore,
 } from '@/lib/feed-view'
@@ -449,9 +451,10 @@ export default function FeedDetailPage() {
 
   const typeInfo = article.type ? TYPE_LABELS[article.type] : null
   const domainLabel = getCategoryLabel(article.category)
+  const scored = hasDisplayScore(article.score)
+  const scoreBreakdownAvailable = scored && hasScoreBreakdown(article)
   const displayScore = toDisplayScore(article.score)
   const scoreTier = getScoreTier(article.score)
-  const sourceType = inferSourceType(article.source, article.url)
   const sourceLink = getSourceLink(article)
   return (
     <div className="feed-paper min-h-screen selection:bg-orange-200/70 selection:text-stone-950 dark:selection:bg-orange-800/70 dark:selection:text-stone-50">
@@ -475,17 +478,16 @@ export default function FeedDetailPage() {
         <header className="feed-hairline border-b">
           <div className="mx-auto max-w-[76rem] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
             <div className="mb-7 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="feed-accent inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em]"><Star className="h-3.5 w-3.5 fill-current" /> {displayScore}/100 · {scoreTier.label}</span>
-              <span className="feed-muted">/</span>
+              {scored && <><span className="feed-accent inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em]"><Star className="h-3.5 w-3.5 fill-current" /> {displayScore}/100 · {scoreTier.label}</span><span className="feed-muted">/</span></>}
               <span className="feed-kicker !text-[hsl(var(--feed-muted))]">{domainLabel}{typeInfo ? ` · ${typeInfo.label}` : ''}</span>
             </div>
             <h1 className="feed-display max-w-4xl text-[28px] font-semibold leading-[1.4] tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[36px] lg:text-[40px]">
-              {article.title}
+              <PublicArticleTitle article={article} />
             </h1>
             <div className="feed-muted mt-5 flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-semibold text-[hsl(var(--feed-ink))]">{article.source}</span>
-              <span aria-hidden="true">·</span><span>{sourceType.label}</span>
-              {article.published_at && <><span aria-hidden="true">·</span><time dateTime={article.published_at}>{formatDate(article.published_at)}</time></>}
+              {article.source && <span className="font-semibold text-[hsl(var(--feed-ink))]">{article.source}</span>}
+              {article.source && article.published_at && <span aria-hidden="true">·</span>}
+              {article.published_at && <time dateTime={article.published_at}>{formatDate(article.published_at)}</time>}
             </div>
           </div>
         </header>
@@ -534,14 +536,14 @@ export default function FeedDetailPage() {
                 </section>
               )}
 
-              <section className="feed-hairline border-t pt-4">
+              {scoreBreakdownAvailable && <section className="feed-hairline border-t pt-4">
                 <h2 className="feed-kicker mb-5">系统评分</h2>
                 <div className="space-y-4">
                   <ScoreBar icon={Sparkles} label="信息密度" value={article.signal} max={10} color="text-[hsl(var(--feed-accent))]" />
                   <ScoreBar icon={Lightbulb} label="新颖度" value={article.novelty} max={10} color="text-[hsl(var(--feed-accent))]" />
                   <ScoreBar icon={Target} label="实用性" value={article.usefulness} max={10} color="text-[hsl(var(--feed-accent))]" />
                 </div>
-              </section>
+              </section>}
 
               {readerContent && <TocSidebar headings={headings} />}
 

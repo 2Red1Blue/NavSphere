@@ -78,6 +78,15 @@ const editorialWithFulltextFixture: Article = {
   content_quality: 'verified_fulltext',
   fulltext_publication_allowed: true,
 }
+const unscoredEditorialFixture: Article = {
+  ...editorialFixture,
+  title: '站内整理标题',
+  original_title: 'Upstream article title',
+  score: 0,
+  signal: 0,
+  novelty: 0,
+  usefulness: 0,
+}
 
 type Browser = {
   newPage(options?: { viewport?: { width: number; height: number } }): Promise<Page>
@@ -214,7 +223,7 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
 
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } })
-    let fixtureMode: 'fulltext' | 'fallback' | 'editorial' | 'editorial-with-fulltext' = 'fulltext'
+    let fixtureMode: 'fulltext' | 'fallback' | 'editorial' | 'editorial-with-fulltext' | 'unscored-editorial' = 'fulltext'
     const thirdPartyRequests: string[] = []
 
     await page.route('**/api/feed/reader-fulltext-fixture', async (route) => {
@@ -223,6 +232,7 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
         contentType: 'application/json',
         body: articleResponse(fixtureMode === 'fulltext' ? fulltextFixture
           : fixtureMode === 'editorial' ? editorialFixture
+            : fixtureMode === 'unscored-editorial' ? unscoredEditorialFixture
             : fixtureMode === 'editorial-with-fulltext' ? editorialWithFulltextFixture : fallbackFixture),
       })
     })
@@ -281,7 +291,9 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
     fixtureMode = 'editorial'
     await page.reload({ waitUntil: 'domcontentloaded' })
     await page.locator('#editorial-brief-title').waitFor({ state: 'visible', timeout: 15_000 })
-    assert.equal(await page.getByRole('heading', { name: editorialPublication.brief.headline.text }).isVisible(), true)
+    assert.equal(await page.getByRole('heading', { name: editorialPublication.brief.headline.text }).count(), 0)
+    assert.equal(await page.getByText('第 1 版', { exact: true }).count(), 0)
+    assert.equal(await page.locator('text=依据以下材料整理').count(), 0)
     assert.equal(await page.getByRole('heading', { name: '不确定性与局限' }).isVisible(), true)
     assert.equal(await page.locator('[aria-labelledby="reader-fallback-title"]').count(), 0, 'editorial replaces the fallback region')
     assert.equal(await page.getByRole('heading', { name: '本站暂不展示完整原文' }).count(), 0, 'editorial never shows the fallback title')
@@ -305,6 +317,13 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
     assert.equal(await page.locator('article .prose').count(), 0, 'editorial has priority over otherwise readable original Markdown')
     assert.equal(await page.locator('nav[aria-label="文章目录"]').count(), 0, 'editorial does not create a TOC from hidden original Markdown')
     assert.equal(await page.locator('[aria-labelledby="reader-fallback-title"]').count(), 0)
+
+    fixtureMode = 'unscored-editorial'
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('heading', { name: 'Upstream article title' }).waitFor({ state: 'visible', timeout: 15_000 })
+    assert.equal(await page.getByRole('heading', { name: '站内整理标题' }).count(), 0)
+    assert.equal(await page.getByRole('heading', { name: '系统评分' }).count(), 0)
+    assert.equal(await page.locator('text=0/100').count(), 0)
   } finally {
     await browser.close()
     server.kill('SIGTERM')
