@@ -1,0 +1,12 @@
+{
+  "id": "complete-editorial-v2-gates",
+  "title": "补齐 Editorial v2 可执行质量门禁与恢复方案",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "low",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付补齐后的设计与 EGP-1；未实施或放行，Claude 实际模型不匹配已记录",
+  "createdAt": "2026-09-08T15:48:50Z",
+  "branch": "main"
+}
