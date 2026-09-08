@@ -1,0 +1,12 @@
+{
+  "id": "review-editorial-v2-first-wave",
+  "title": "审查 Editorial v2 第一波产出与迁移演练实现",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付第一波问题清单；P0/P1 阻断迁移与第二波实现，双模型分析超时已记录",
+  "createdAt": "2026-09-09T00:00:00Z",
+  "branch": "main"
+}
