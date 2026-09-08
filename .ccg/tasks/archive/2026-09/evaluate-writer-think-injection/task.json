@@ -1,0 +1,12 @@
+{
+  "id": "evaluate-writer-think-injection",
+  "title": "诊断写手文章过短并评估 Think 注入",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "high",
+  "domain": "backend",
+  "currentPhase": "completed",
+  "nextAction": "归档任务",
+  "createdAt": "2026-09-08T03:36:00Z",
+  "branch": "main"
+}
