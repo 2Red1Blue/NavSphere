@@ -36,6 +36,8 @@ transport 若返回十进制 USD，先取得原始十进制字符串；Python �
 
 本轮用 `.venv` 运行六个既有套件：84 tests，OK。新增链路不是全绿：migration 单套件 26 tests OK；invocation contract 14 tests 有 4 errors，editorial execution 22 tests 有 18 errors，主要是新加 `source_evidence_sha256` 后构造器/ExecutionPlan/测试未同步。因此当前阻断已从“缺 yaml”变为真实契约不一致。
 
+同时追认 explainer/full 的 A/B 计量模式为 `absolute-only`：历史 v1 没有完整 usage、失败调用和可信身份，不能计算同源 4 倍倍率。以后只有完成逐调用计量并冻结受控 v1 重跑，才能用新实验恢复倍率比较；不得追溯修改本批次口径。
+
 ## 6. 生产迁移：现在不执行，D 阶段条件满足后再开窗口
 
 B 影子实验使用隔离/测试数据库，不需要先动生产库。生产迁移只有以下条件全部满足才允许安排：契约双端冻结；OQ-14/15/08 关闭；invocation/workflow/legacy 全套测试通过；迁移对象 manifest 与 trigger 行为验证通过；真实 store 恢复演练通过；一致备份和停写者清单准备完成；无未对账 publish/delivery unknown；人类明确批准目标、窗口和确认短语。
