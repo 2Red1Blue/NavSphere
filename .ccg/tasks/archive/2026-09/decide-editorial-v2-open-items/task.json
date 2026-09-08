@@ -1,0 +1,12 @@
+{
+  "id": "decide-editorial-v2-open-items",
+  "title": "裁决 Editorial v2 六项开放问题",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付六项裁决；实现线需先修 ledger 测试与事务边界，生产迁移仍冻结",
+  "createdAt": "2026-09-09T02:00:00Z",
+  "branch": "main"
+}
