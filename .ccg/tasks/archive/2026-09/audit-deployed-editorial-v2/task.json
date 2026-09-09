@@ -1,0 +1,12 @@
+{
+  "id": "audit-deployed-editorial-v2",
+  "title": "审计 Editorial v2 部署、客户端门禁与契约验证",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "frontend",
+  "currentPhase": "completed",
+  "nextAction": "交付上线后审计；v2 契约 P1 与双模型审阅失败均已记录",
+  "createdAt": "2026-09-09T02:20:00Z",
+  "branch": "main"
+}
