@@ -1,0 +1,12 @@
+{
+  "id": "research-harness-resource-governance",
+  "title": "研究 DSH 与 Codex 子智能体资源治理并修正预算架构",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "low",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付 host limits + post-run usage ledger 结论；逐调用费用预估硬门禁应删除",
+  "createdAt": "2026-09-09T04:00:00Z",
+  "branch": "main"
+}
