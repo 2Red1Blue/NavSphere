@@ -1,0 +1,12 @@
+{
+  "id": "implement-shadow-canary",
+  "title": "实现 Editorial v2 真实影子 canary 调度器并运行 Psyche 诊断",
+  "status": "superseded",
+  "complexity": "L",
+  "risk": "medium",
+  "domain": "backend",
+  "currentPhase": "completed",
+  "nextAction": "用户澄清为 harness 预算架构问题；实现暂停，裁决为 host execution limits + post-run usage ledger",
+  "createdAt": "2026-09-09T03:20:00Z",
+  "branch": "main"
+}
