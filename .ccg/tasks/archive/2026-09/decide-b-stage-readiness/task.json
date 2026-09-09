@@ -1,0 +1,12 @@
+{
+  "id": "decide-b-stage-readiness",
+  "title": "裁决 Editorial v2 B 阶段影子运行是否可启动",
+  "status": "completed",
+  "complexity": "L",
+  "risk": "high",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "NO-LAUNCH；交付 B 阶段预检修复清单和 delegated golden 技术裁决",
+  "createdAt": "2026-09-09T03:00:00Z",
+  "branch": "main"
+}
