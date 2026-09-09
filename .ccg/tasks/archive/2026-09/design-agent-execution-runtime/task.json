@@ -1,0 +1,12 @@
+{
+  "id": "design-agent-execution-runtime",
+  "title": "依据 DSH 与 Codex 源码设计 Content OS 执行与用量治理重构",
+  "status": "completed",
+  "complexity": "M",
+  "risk": "medium",
+  "domain": "architecture",
+  "currentPhase": "completed",
+  "nextAction": "交付详细设计，按文档顺序开展实现需进入后续实现任务",
+  "createdAt": "2026-09-09T12:27:00Z",
+  "branch": "main"
+}
