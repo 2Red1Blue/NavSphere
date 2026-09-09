@@ -31,7 +31,7 @@
 冻结后必须产生不可变 `experiment.lock.json`，并由 runner 在任何外呼前校验：
 
 - lock schema/version、状态、experiment_id、canonical SHA；
-- policy 文件内容/哈希、冻结全文 SHA、SourceDocument/packet SHA；
+- policy 文件内容/哈希、冻结全文 SHA、SourceDocument/packet SHA，以及 reservation lease/fencing 配置；
 - delegated/human signer kind 与允许的运行阶段；
 - 任务清单、全局预算、单任务预算、deadline、输出路径；
 - golden/holdout source snapshot hashes 与不可替换的 selection seed。
