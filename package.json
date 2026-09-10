@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src tests scripts/navigation-tree.test.ts",
     "test": "pnpm run test:unit && pnpm run test:schema",
-    "test:unit": "tsx --test tests/*.test.ts scripts/navigation-tree.test.ts",
+    "test:unit": "tsx --test tests/*.test.ts tests/*.test.tsx scripts/navigation-tree.test.ts",
+    "typecheck": "tsc --noEmit",
     "test:schema": "sh scripts/verify-d1-schema.sh",
     "clean": "rm -rf .next",
     "docker:build": "docker build -f docker/Dockerfile -t navsphere:latest .",
@@ -27,7 +28,8 @@
     "cf:production-gate": "tsx scripts/production-gate.ts",
     "cf:retention-audit": "tsx scripts/d1-retention-audit.ts",
     "cf:archive": "tsx scripts/d1-cold-archive.ts",
-    "cf:deploy": "pnpm run cf:build && wrangler pages deploy .vercel/output/static --project-name navsphere"
+    "cf:deploy": "pnpm run cf:build && pnpm run verify:artifact && wrangler pages deploy .vercel/output/static --project-name navsphere",
+    "verify:artifact": "node scripts/artifact-scan.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

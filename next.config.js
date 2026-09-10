@@ -28,6 +28,10 @@ const nextConfig = {
   // Note: Most routes use 'edge' runtime which is compatible with Cloudflare
   output: 'standalone',
 
+  // Output directory override for local verification builds; the default is
+  // unchanged ('.next') so normal dev/build/deploy flows are unaffected.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+
   images: {
     // User-managed navigation items can point at arbitrary remote icons. Keep
     // those requests in the browser instead of turning Next's optimizer into

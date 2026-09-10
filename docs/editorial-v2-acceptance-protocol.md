@@ -143,6 +143,14 @@ API 模式由 A 冻结供应方、币种、地区/缓存/工具计费规则和�
 
 任何检查失败保持调度关闭并报错，不自动“尝试 v1 启动”。本地回滚不撤销已发生的远端发布/推送：存在 publish_unknown/delivery_unknown 时先对账，不重新发送。
 
+**备份准入与版本标记（2026-09-09 迁移演练与实现回灌）**：
+
+- 备份准入 = integrity_check **加** 与源在线状态比对（行数、写入水位、规范化摘要）。仅 integrity_check 不足以识别"陈旧但自洽"的冷拷贝（WAL 活跃时可能仍为 ok）与落在空闲区域的轻微软损坏。
+- schema 版本标记：`editorial_schema_migrations` 迁移注册表（append-only trigger）为**权威**；`PRAGMA user_version` 仅在同一事务内镜像最高版本号作为只读快速信号。v1 库 = registry 空。
+- v1 dry-run 最小查询集（只读验收命令）：只读打开、排队查询（queued 行数/ids）、publish_unknown/delivery_unknown 计数、succeeded_deliveries、integrity_check、foreign_key_check、user_version/registry、前后文件哈希一致（file_unchanged）。
+- 前向修复对账记录落盘格式：`kind/recorded_at/target/old_watermark/new_watermark/row_count_deltas/work_items_delta/new_records[{work_id,article_id,state,generation_key,created_at}]/explainable/old_backup_overwrite_refused/decision/human_approval_required_to_resume/scheduler_resumed:false`。
+- 迁移演练必须调用真实 `EditorialWorkflowStore`（有效 16-hex 首发、同源去重、显式 rewrite、并发 enqueue、CAS、撤回、通知跳过），不得用裸 SQL 插入虚构 work_id 充当恢复证明。
+
 实施验收必须在隔离副本注入四个故障：建表后、复制中、提交后未开写、开写并新增一条工作项后。验证前面三个能完整回到 v1；第四个必须拒绝覆盖恢复并保住新记录。另测备份损坏和模拟 WAL 活跃备份，验证拒绝不一致备份。保存演练日志、库版本/哈希、行数/历史摘要、完整性结果和无外部副作用证明。演练通过前禁止生产表重建。
 
 ## 7. 最小落地顺序与完成定义

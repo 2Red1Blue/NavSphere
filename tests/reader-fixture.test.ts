@@ -11,9 +11,12 @@ import type { Article } from '../src/types/feed'
 
 const IMAGE_URL = 'https://images.example.test/reader-fixture.png'
 const ARTICLE_URL = 'https://source.example.test/articles/reader-fixture'
+// Keep this browser fixture on the production article-ID shape so its route
+// exercises the middleware rather than needing a test-only bypass.
+const READER_FIXTURE_ID = 'a1b2c3d4e5f60718'
 
 const fulltextFixture: Article = {
-  url_hash: 'reader-fulltext-fixture',
+  url_hash: READER_FIXTURE_ID,
   title: 'Reader fixture article',
   summary: 'This is the short AI guide.',
   takeaway: 'A local fixture exercises the reader contract without D1 writes.',
@@ -53,7 +56,7 @@ const fulltextFixture: Article = {
 
 const fallbackFixture: Article = {
   ...fulltextFixture,
-  url_hash: 'reader-fallback-fixture',
+  url_hash: READER_FIXTURE_ID,
   content: null,
   content_format: null,
   content_quality: 'summary_only',
@@ -210,7 +213,7 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
   const { process: server, output } = startDevServer(port)
   const browser = await (async () => {
     try {
-      await waitForDevServer(`http://127.0.0.1:${port}/feed/reader-fulltext-fixture`, output)
+      await waitForDevServer(`http://127.0.0.1:${port}/feed/${READER_FIXTURE_ID}`, output)
       return await playwright.chromium.launch({ headless: true })
     } catch (error) {
       server.kill('SIGTERM')
@@ -226,7 +229,7 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
     let fixtureMode: 'fulltext' | 'fallback' | 'editorial' | 'editorial-with-fulltext' | 'unscored-editorial' = 'fulltext'
     const thirdPartyRequests: string[] = []
 
-    await page.route('**/api/feed/reader-fulltext-fixture', async (route) => {
+    await page.route(`**/api/feed/${READER_FIXTURE_ID}`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -247,7 +250,7 @@ test('reader local fixture renders fulltext/editorial/fallback and responsive pr
       if (request.url() === IMAGE_URL) thirdPartyRequests.push(request.url())
     })
 
-    await page.goto(`http://127.0.0.1:${port}/feed/reader-fulltext-fixture`, { waitUntil: 'domcontentloaded' })
+    await page.goto(`http://127.0.0.1:${port}/feed/${READER_FIXTURE_ID}`, { waitUntil: 'domcontentloaded' })
     await page.locator('article .prose h2', { hasText: 'First section' }).waitFor({ state: 'visible', timeout: 15_000 })
 
     assert.equal(await page.locator('article .prose h2', { hasText: 'First section' }).getAttribute('id'), 'first-section')

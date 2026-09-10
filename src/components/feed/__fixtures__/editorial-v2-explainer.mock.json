@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "renderer_version": "editorial-v2",
+  "article_id": "5c35ffca30a49a9a",
+  "content_type": "explainer",
+  "article": {
+    "title": "不善待自己，也是一种道德过错吗？关于自我义务、自由与责任的哲学争论",
+    "deck": "围绕自我道德义务的争论，文章梳理了支持与反对两方的理由，并保留了结论尚未统一的边界。",
+    "sections": [
+      {
+        "id": "sec_01",
+        "heading": "为什么对自己也会感到内疚",
+        "blocks": [
+          {"id": "b_01", "type": "paragraph", "text": "许多人会因熬夜、放弃锻炼或没有兑现给自己的承诺而感到内疚。问题在于，这种情绪究竟只是个人偏好的落空，还是像辜负他人一样，构成一种道德过错。", "source_ids": ["src_01"]},
+          {"id": "b_02", "type": "paragraph", "text": "如果道德义务只存在于人与人之间，那么对自己的亏欠似乎无处安放；但如果自我关系也受道德约束，苛责与内疚就有了不同的含义。", "source_ids": ["src_01"], "emphasis_spans": [{"start": 34, "end": 44}]}
+        ]
+      },
+      {
+        "id": "sec_02",
+        "heading": "支持与反对自我义务的主要理由",
+        "blocks": [
+          {"id": "b_03", "type": "paragraph", "text": "反对者认为，道德用来协调不同人之间的利益，把义务扩展到自我身上要么概念上不通，要么会过度干涉个人自由。", "source_ids": ["src_01"]},
+          {"id": "b_04", "type": "quote", "text": "如果欠债的人与被欠的人是同一个人，我是否可以随时免除自己对自己的义务？这被称为自我免除悖论。", "source_ids": ["src_01"], "attribution": "关于自我免除悖论的讨论"},
+          {"id": "b_05", "type": "paragraph", "text": "支持者则指出，自我尊重与自我修养长期以来被视作道德生活的一部分；不过这类立场仍需要说明它如何避免把个人偏好误写成普遍义务。", "source_ids": ["src_01", "src_02"]}
+        ]
+      },
+      {
+        "id": "sec_03",
+        "heading": "普通人如何理解对自己的义务",
+        "blocks": [
+          {"id": "b_06", "type": "paragraph", "text": "不同人会把某些自我行为归入义务范畴，而把另一些归入个人偏好；这种区分本身也会随伤害程度和生活处境改变。", "source_ids": ["src_02"]},
+          {"id": "b_07", "type": "list", "items": ["避免自我伤害、照顾身心健康与保证个人安全", "喝茶、读小说与选择娱乐方式等个人偏好", "放弃长期目标是否构成对自己的过错"], "source_ids": ["src_02"]},
+          {"id": "b_08", "type": "paragraph", "text": "行为的伤害性越高，越容易被判断为对自己的义务；这一判断仍不能直接证明存在唯一正确的道德答案。", "source_ids": ["src_01", "src_02"]}
+        ]
+      },
+      {
+        "id": "sec_04",
+        "heading": "结论的边界与未解决的问题",
+        "blocks": [
+          {"id": "b_09", "type": "paragraph", "text": "描述性的调查或哲学论证并不能直接证明客观上存在对自己的道德义务；它们更适合说明争论为何持续存在。", "source_ids": ["src_01"]},
+          {"id": "b_10", "type": "list", "items": ["道德化自我照顾可能带来行动动力", "也可能带来苛责、内疚与更少的同理心", "不同生活条件会改变同一行为的道德含义"], "source_ids": ["src_02"]},
+          {"id": "b_11", "type": "paragraph", "text": "因此，这篇解读保留来源入口和不同立场，而不把任何一方写成已经获得最终证明的结论。", "source_ids": ["src_01"]}
+        ]
+      }
+    ]
+  },
+  "sources": [
+    {"id": "src_01", "title": "Psyche 关于自我善待的文章", "url": "https://example.org/psyche/self-obligations", "original_title": "Is it morally wrong to mistreat yourself?"},
+    {"id": "src_02", "title": "关于自我义务判断的讨论材料", "url": "https://example.org/studies/self-obligation-survey"}
+  ]
+}

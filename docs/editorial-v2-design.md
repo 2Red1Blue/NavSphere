@@ -4,6 +4,8 @@
 
 放行规则补全于 2026-09-08：[验收与运行协议 EGP-1](editorial-v2-acceptance-protocol.md) 是阈值、人工校准和恢复条件的唯一规则来源。下面保留架构说明，不重复定义数值；协议仍待实现，文档完成不等于实验通过。
 
+**实施状态（2026-09-09）**：契约已冻结（`drafts/editorial-v2/contracts/FREEZE.md`，Python/TS 双端 20 fixtures 对拍通过，Python 734 / NavSphere 196 测试全绿）。Invocation Ledger V2 已按 [agent-invocation-ledger-v2-design.md](agent-invocation-ledger-v2-design.md) 实现：OQ-14 原子预留 + 租约/fencing（`scripts/editorial_execution.py`）、OQ-15 信任域（`TRUSTED_PROVIDER_HOSTS` 冻结于代码，attested 空集）、OQ-08 `cost_microusd` 整数口径。前端 v2 文章页、三态读端（absent/available/unavailable）与 `?mock_v2=` 生产编译期门禁已实现；EGP-1 §6 已回灌备份准入、migration registry、v1 dry-run 检查集与对账格式。B 阶段影子实验未开始；生产表重建与自动发布仍未授权。
+
 ## 1. 核心决策
 
 保留 Python Content Core、SQLite 持久化工作流、Hermes 调度、ACP Agent 接口和 NavSphere/Cloudflare 发布端。重构内容契约，不迁移整套运行时，也不为每篇文章堆叠多个 Agent。

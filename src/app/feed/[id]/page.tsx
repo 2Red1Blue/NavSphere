@@ -13,6 +13,12 @@ import { Button } from '@/registry/new-york/ui/button'
 import { Skeleton } from '@/registry/new-york/ui/skeleton'
 import { FeedError } from '@/components/feed/feed-error'
 import { EditorialBrief } from '@/components/feed/editorial-brief'
+import {
+  EditorialArticle,
+  EditorialArticleUnavailable,
+  resolveEditorialV2State,
+  type EditorialArticleV2,
+} from '@/components/feed/editorial-article'
 import { PublicArticleTitle } from '@/components/feed/public-article-title'
 import {
   getCategoryLabel,
@@ -29,6 +35,7 @@ import {
   normalizeReaderMarkdown,
 } from '@/lib/reader-markdown'
 import { validateEditorialPublication } from '@/lib/editorial-contract'
+import { resolveMockPreviewKey } from '@/lib/mock-preview'
 import type { ReaderHeading } from '@/lib/reader-markdown'
 import type { Article } from '@/types/feed'
 import { cn } from '@/lib/utils'
@@ -343,11 +350,53 @@ export default function FeedDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [readingProgress, setReadingProgress] = useState(0)
+  // ?mock_v2=<key> renders a development-only fixture.  Real v2 publications
+  // always use the v2 contract below; a feature flag must not make an invalid
+  // v2 payload silently fall back to the v1 renderer.
+  const [mockArticleV2, setMockArticleV2] = useState<EditorialArticleV2 | null>(null)
+
+  useEffect(() => {
+    // Mock v2 preview entry is registered only in non-production builds. The
+    // literal NODE_ENV guard folds to a constant at compile time, so bundler
+    // dead-branch elimination removes this whole branch — including the
+    // dynamic __fixtures__ import and its 【占位】 content — from production
+    // bundles. In production ?mock_v2= is ignored entirely and the page
+    // follows the normal v1/v2 dispatch.
+    if (process.env.NODE_ENV !== 'production') {
+      const mockKey = resolveMockPreviewKey(window.location.search)
+      if (!mockKey) return
+      let cancelled = false
+      import('@/components/feed/__fixtures__').then(({ loadMockEditorialArticleV2 }) => {
+        if (!cancelled) setMockArticleV2(loadMockEditorialArticleV2(mockKey))
+      }).catch(() => { /* mock preview is best-effort only */ })
+      return () => { cancelled = true }
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
 
     async function fetchArticle() {
+      // Mock v2 preview renders placeholder fixtures without a live payload.
+      // Same compile-time gate as above: in production builds this branch —
+      // and the 【占位】 stub article — is dead code eliminated from the
+      // bundle, and the request goes straight to the live API.
+      if (process.env.NODE_ENV !== 'production'
+        && resolveMockPreviewKey(window.location.search)) {
+        setArticle({
+          url_hash: 'mockv2preview',
+          title: '【占位】mock 文章',
+          original_title: '【占位】原始抓取标题（仅供排版验证）',
+          source: 'Mock 来源',
+          url: 'https://example.org/article',
+          category: 'general',
+          score: 0, signal: 0, novelty: 0, usefulness: 0,
+          discovered_at: '', created_at: '',
+          published_at: '2026-09-08T00:00:00Z',
+        })
+        setLoading(false)
+        return
+      }
       try {
         setLoading(true)
         setError(null)
@@ -402,6 +451,15 @@ export default function FeedDetailPage() {
   // Keep the parsed Markdown and component identities stable across SWR/state
   // re-renders. This preserves image consent and avoids reparsing large bodies.
   const editorial = useMemo(() => getRenderableEditorial(article?.editorial), [article?.editorial])
+  // editorial-v2 reader states (CONTRACT.md §2.4): available renders the v2
+  // article; unavailable (v2 record present but invalid/unknown version) shows
+  // an explicit notice and never falls back to v1. absent defers entirely to
+  // the untouched v1 dispatch below (including schema_version==1 records).
+  const editorialV2State = useMemo(() => {
+    if (mockArticleV2) return { state: 'available', publication: mockArticleV2 } as const
+    return resolveEditorialV2State(article?.editorial)
+  }, [mockArticleV2, article?.editorial])
+  const editorialV2 = editorialV2State.state === 'available' ? editorialV2State.publication : null
   const rendersFullContent = article ? canRenderFullContent(article) : false
   const articleContent = article?.content
   const articleTitle = article?.title
@@ -481,21 +539,35 @@ export default function FeedDetailPage() {
               {scored && <><span className="feed-accent inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em]"><Star className="h-3.5 w-3.5 fill-current" /> {displayScore}/100 · {scoreTier.label}</span><span className="feed-muted">/</span></>}
               <span className="feed-kicker !text-[hsl(var(--feed-muted))]">{domainLabel}{typeInfo ? ` · ${typeInfo.label}` : ''}</span>
             </div>
-            <h1 className="feed-display max-w-4xl text-[28px] font-semibold leading-[1.4] tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[36px] lg:text-[40px]">
-              <PublicArticleTitle article={article} />
-            </h1>
-            <div className="feed-muted mt-5 flex flex-wrap items-center gap-2 text-sm">
-              {article.source && <span className="font-semibold text-[hsl(var(--feed-ink))]">{article.source}</span>}
-              {article.source && article.published_at && <span aria-hidden="true">·</span>}
-              {article.published_at && <time dateTime={article.published_at}>{formatDate(article.published_at)}</time>}
-            </div>
+            {editorialV2 ? null : (
+              <>
+                {/* v1 header: original-title-first display stays untouched. */}
+                <h1 className="feed-display max-w-4xl text-[28px] font-semibold leading-[1.4] tracking-[-0.02em] [overflow-wrap:anywhere] sm:text-[36px] lg:text-[40px]">
+                  <PublicArticleTitle article={article} />
+                </h1>
+                <div className="feed-muted mt-5 flex flex-wrap items-center gap-2 text-sm">
+                  {article.source && <span className="font-semibold text-[hsl(var(--feed-ink))]">{article.source}</span>}
+                  {article.source && article.published_at && <span aria-hidden="true">·</span>}
+                  {article.published_at && <time dateTime={article.published_at}>{formatDate(article.published_at)}</time>}
+                </div>
+              </>
+            )}
           </div>
         </header>
 
-        <div className="mx-auto grid max-w-[76rem] gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-10 xl:gap-12">
-          <main className="min-w-0 max-w-[76ch]" id="main-content">
+        {/* v2 uses a single reading column (body max 720px + in-component TOC). */}
+        <div className={cn('mx-auto grid max-w-[76rem] gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-10 xl:gap-12', editorialV2 && 'lg:grid-cols-none')}>
+          <main className={cn('min-w-0', editorialV2 ? 'max-w-none' : 'max-w-[76ch]')} id="main-content">
             {/* Editorials take the body slot; original Markdown is shown only otherwise. */}
-            {editorial ? (
+            {editorialV2 ? (
+              <EditorialArticle
+                publication={editorialV2}
+                publishedAt={article.published_at}
+                sourceName={article.source}
+              />
+            ) : editorialV2State.state === 'unavailable' ? (
+              <EditorialArticleUnavailable sourceLabel={article.source} sourceUrl={article.url} />
+            ) : editorial ? (
               <EditorialBrief editorial={editorial} />
             ) : readerContent ? (
               <section className="mb-12" aria-label="文章正文">
@@ -526,7 +598,8 @@ export default function FeedDetailPage() {
             )}
           </main>
 
-          <aside className="min-w-0 lg:order-none" aria-label="编辑注与文章信息">
+          {/* v2 keeps sources in the article footer; the v1 aside stays untouched. */}
+          <aside className={cn('min-w-0 lg:order-none', editorialV2 && 'hidden')} aria-label="编辑注与文章信息">
             <div className="space-y-8 lg:sticky lg:top-8">
               {(editorial || readerContent) && (article.summary || article.takeaway) && (
                 <section className="feed-hairline border-t pt-4">

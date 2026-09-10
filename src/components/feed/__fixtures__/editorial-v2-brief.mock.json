@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "renderer_version": "editorial-v2",
+  "article_id": "a1b2c3d4e5f60718",
+  "content_type": "brief",
+  "downgraded_from": "explainer",
+  "article": {
+    "title": "某开源导航项目发布 2.0 版本",
+    "deck": "简讯体裁展示一项版本更新，并说明材料不足时为何从原文解读降级。",
+    "sections": [
+      {"id": "sec_01", "heading": "发生了什么", "blocks": [{"id": "b_01", "type": "paragraph", "text": "项目发布了 2.0 版本，但现有材料只足以确认更新事实，不能支持完整的技术路线解读。", "source_ids": ["src_01"]}]},
+      {"id": "sec_02", "heading": "关键条件与影响", "blocks": [{"id": "b_02", "type": "list", "items": ["升级前需要核对配置文件兼容性", "旧版本会在过渡期内继续获得维护"], "source_ids": ["src_01"]}, {"id": "b_03", "type": "paragraph", "text": "由于缺少完整变更说明，本文仅保留已经确认的信息，并标记为从解读路径降级的简讯。", "source_ids": ["src_01"]}]}
+    ]
+  },
+  "sources": [{"id": "src_01", "title": "项目发布公告", "url": "https://example.org/releases/v2"}]
+}

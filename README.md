@@ -17,7 +17,7 @@
 
 ## 📖 项目简介
 
-NavSphere 是一个基于 Next.js 15 构建的现代化导航管理平台，集成了**视频导航**和**网址导航**两大核心功能。专为内容收藏、分类和管理而设计，通过 GitHub 作为数据存储后端，提供安全、可靠的导航数据管理体验。
+NavSphere 是一个基于 Next.js 15 构建的现代化导航管理平台，集成**视频导航**、**网址导航**与 Content OS 的 AI 资讯 Feed。导航管理数据继续使用 GitHub 后端；Feed 使用 Cloudflare Pages/D1，并通过受控 API 接收已批准内容。完整的父系统边界与功能状态见[架构与功能总览](../docs/system-architecture.md)。
 
 ### 双核心功能
 
@@ -96,18 +96,18 @@ NavSphere 是一个基于 Next.js 15 构建的现代化导航管理平台，集�
 - 🎭 **图标系统**：Lucide React 图标库
 - 📦 **状态管理**：React Query 数据获取和缓存
 - 🔧 **表单处理**：React Hook Form + Zod 验证
-- 🌐 **数据存储**：GitHub 仓库作为数据后端
+- 🌐 **数据存储**：导航数据使用 GitHub；Feed 元数据与受控阅读使用 D1
 - 🔐 **身份认证**：NextAuth.js v5 OAuth 认证
 
 ## 🛠️ 技术架构
 
 | 技术栈              | 版本          | 用途                  |
 | ------------------- | ------------- | --------------------- |
-| **Next.js**         | 15.5.7        | React 全栈框架        |
+| **Next.js**         | 15.5.21       | React 全栈框架        |
 | **React**           | 18.2.0        | 用户界面库            |
 | **TypeScript**      | 5.1.6         | 类型安全的 JavaScript |
 | **Tailwind CSS**    | 4.1.12        | 原子化 CSS 框架       |
-| **NextAuth.js**     | 5.0.0-beta.25 | 身份认证解决方案      |
+| **NextAuth.js**     | 5.0.0-beta.32 | 身份认证解决方案      |
 | **Radix UI**        | Latest        | 无障碍 UI 组件库      |
 | **Lucide React**    | 0.462.0       | 现代图标库            |
 | **React Query**     | 5.62.2        | 数据获取和状态管理    |
@@ -119,7 +119,7 @@ NavSphere 是一个基于 Next.js 15 构建的现代化导航管理平台，集�
 
 ### 环境要求
 
-- Node.js 20.0+
+- Node.js 22.0+
 - pnpm 8.0+ (推荐) 或 npm/yarn
 - GitHub 账户
 
