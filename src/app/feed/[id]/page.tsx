@@ -37,7 +37,7 @@ import {
 import { validateEditorialPublication } from '@/lib/editorial-contract'
 import { resolveMockPreviewKey } from '@/lib/mock-preview'
 import type { ReaderHeading } from '@/lib/reader-markdown'
-import type { Article } from '@/types/feed'
+import type { Article, PublicEditorial } from '@/types/feed'
 import { cn } from '@/lib/utils'
 
 function formatDate(dateStr?: string): string {
@@ -84,14 +84,13 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   tool: { label: '工具', icon: '🔧' },
 }
 
-function getRenderableEditorial(editorial: Article['editorial']): NonNullable<Article['editorial']> | null {
+function getRenderableEditorial(editorial: Article['editorial']): PublicEditorial | null {
   if (!editorial) return null
   const { revision, published_at, ...publication } = editorial
   if (!Number.isInteger(revision) || revision < 1 || revision > 2147483647
     || typeof published_at !== 'string') return null
   try {
-    validateEditorialPublication(publication)
-    return editorial
+    return { ...validateEditorialPublication(publication), revision, published_at }
   } catch {
     return null
   }
@@ -457,8 +456,8 @@ export default function FeedDetailPage() {
   // the untouched v1 dispatch below (including schema_version==1 records).
   const editorialV2State = useMemo(() => {
     if (mockArticleV2) return { state: 'available', publication: mockArticleV2 } as const
-    return resolveEditorialV2State(article?.editorial)
-  }, [mockArticleV2, article?.editorial])
+    return resolveEditorialV2State(article?.editorial_v2)
+  }, [mockArticleV2, article?.editorial_v2])
   const editorialV2 = editorialV2State.state === 'available' ? editorialV2State.publication : null
   const rendersFullContent = article ? canRenderFullContent(article) : false
   const articleContent = article?.content

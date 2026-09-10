@@ -2,6 +2,7 @@
   "schema_version": 2,
   "renderer_version": "editorial-v2",
   "article_id": "a1b2c3d4e5f60718",
+  "source": {"url": "https://example.org/releases/v2", "original_url": null, "original_url_provenance": null},
   "content_type": "brief",
   "downgraded_from": "explainer",
   "article": {

@@ -8,7 +8,7 @@
  * agreement is the freeze condition in FREEZE.md §4.
  */
 import { canonicalEditorialJson, parseEditorialJson } from './editorial-contract'
-import { validateOriginalUrl } from './source-provenance'
+import { validOriginalMetadata, validateOriginalUrl, type OriginalUrlProvenance } from './source-provenance'
 
 // OQ-14/审计 P1-2: this module must stay import-safe in browser/Reader code,
 // so node:crypto is NOT imported.  Hash recomputation (segment hashes, policy
@@ -34,6 +34,39 @@ export class ContractViolationV2 extends Error {
     super(code)
     this.name = 'ContractViolationV2'
     this.code = code
+  }
+}
+
+export interface EditorialPublicationV2 {
+  schema_version: 2
+  renderer_version: 'editorial-v2'
+  article_id: string
+  source: EditorialV2SourceBinding
+  content_type: 'brief' | 'explainer'
+  downgraded_from?: 'explainer'
+  article: Record<string, unknown>
+  sources: Array<Record<string, unknown>>
+}
+
+export type EditorialV2SourceBinding = {
+  url: string
+  original_url: string | null
+  original_url_provenance: OriginalUrlProvenance | null
+}
+
+export type ManualEditorialV2Submission = {
+  schema_version: 2
+  expected_state: 'absent' | 'published' | 'withdrawn'
+  expected_revision: number
+  publication: EditorialPublicationV2
+  acceptance: {
+    schema_version: 1
+    accepted_by: string
+    accepted_at: string
+    candidate_sha256: string
+    draft_sha256: string
+    review_sha256: string
+    minor_issue_count: number
   }
 }
 
@@ -547,11 +580,12 @@ export function validateReviewReportV2(envelope: unknown): Record<string, unknow
 
 export function validatePublicationV2(publication: unknown): Record<string, unknown> {
   const value = object(publication, ['schema_version', 'renderer_version', 'article_id',
-    'content_type', 'article', 'sources'], ['downgraded_from'])
+    'source', 'content_type', 'article', 'sources'], ['downgraded_from'])
   assert(value.schema_version === 2, 'invalid_schema_version')
   assert(value.renderer_version === 'editorial-v2', 'invalid_schema_version')
   assert(typeof value.article_id === 'string' && /^[a-f0-9]{16}$/.test(value.article_id),
     'invalid_article_id')
+  sourceBinding(value.source)
   enumValue(value.content_type, ['brief', 'explainer'], 'invalid_content_type')
   if ('downgraded_from' in value && value.downgraded_from !== null) {
     assert(value.downgraded_from === 'explainer' && value.content_type === 'brief',
@@ -564,8 +598,66 @@ export function validatePublicationV2(publication: unknown): Record<string, unkn
   return value
 }
 
+function sourceBinding(value: unknown): EditorialV2SourceBinding {
+  const source = object(value, ['url', 'original_url', 'original_url_provenance'])
+  const current = url(source.url)
+  const original = source.original_url
+  const provenance = source.original_url_provenance
+  if (original === null || provenance === null) {
+    assert(original === null && provenance === null, 'invalid_source_binding')
+    return { url: current, original_url: null, original_url_provenance: null }
+  }
+  const validatedOriginal = url(original)
+  assert(validOriginalMetadata({ url: current, original_url: validatedOriginal, original_url_provenance: provenance }),
+    'invalid_source_binding')
+  return { url: current, original_url: validatedOriginal, original_url_provenance: provenance as OriginalUrlProvenance }
+}
+
+/** Manual-only v2 publication request.  This is a transport envelope, not a
+ * public article: private drafts, prompts, model output and review prose are
+ * intentionally excluded. */
+export function validateManualEditorialV2Submission(value: unknown): ManualEditorialV2Submission {
+  const request = object(value, ['schema_version', 'expected_state', 'expected_revision',
+    'publication', 'acceptance'])
+  assert(request.schema_version === 2, 'invalid_schema_version')
+  const expectedState = enumValue(request.expected_state, ['absent', 'published', 'withdrawn'], 'invalid_expected_state')
+  const expectedRevision = integer(request.expected_revision, 0, 2147483647)
+  const publication = validatePublicationV2(request.publication) as unknown as EditorialPublicationV2
+  const acceptance = object(request.acceptance, ['schema_version', 'accepted_by', 'accepted_at',
+    'candidate_sha256', 'draft_sha256', 'review_sha256', 'minor_issue_count'])
+  assert(acceptance.schema_version === 1, 'invalid_acceptance')
+  text(acceptance.accepted_by, 1, 80)
+  assert(typeof acceptance.accepted_at === 'string' && TIMESTAMP.test(acceptance.accepted_at), 'invalid_acceptance')
+  for (const field of ['candidate_sha256', 'draft_sha256', 'review_sha256'] as const) hex64(acceptance[field])
+  integer(acceptance.minor_issue_count, 0, 64)
+  return {
+    schema_version: 2,
+    expected_state: expectedState as ManualEditorialV2Submission['expected_state'],
+    expected_revision: expectedRevision,
+    publication,
+    acceptance: {
+      schema_version: 1,
+      accepted_by: acceptance.accepted_by as string,
+      accepted_at: acceptance.accepted_at as string,
+      candidate_sha256: acceptance.candidate_sha256 as string,
+      draft_sha256: acceptance.draft_sha256 as string,
+      review_sha256: acceptance.review_sha256 as string,
+      minor_issue_count: acceptance.minor_issue_count as number,
+    },
+  }
+}
+
 export function articleSha256(publication: unknown): string {
   return sha256Canonical(publication)
+}
+
+/** Server/edge digest for the manually submitted canonical public payload.
+ * Unlike `articleSha256`, this uses Web Crypto and therefore needs no mutable
+ * Node hasher configuration. */
+export async function digestCanonicalV2(value: unknown): Promise<string> {
+  const bytes = utf8Encoder.encode(canonicalEditorialJson(value))
+  const hash = await crypto.subtle.digest('SHA-256', bytes)
+  return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 export function validateDistributionBindingV2(binding: unknown): Record<string, unknown> {

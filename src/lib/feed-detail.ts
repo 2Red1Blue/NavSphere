@@ -2,7 +2,8 @@ import { FEED_LIST_COLUMNS, FEED_RETRY_AFTER_SECONDS } from './feed-api'
 import { ARCHIVE_COLUMNS, readArchiveBody, sameArchiveSnapshot } from './content-archive'
 import type { ArchiveKV, ArchiveRow } from './content-archive'
 import { parseEditorialJson, validateEditorialPublication } from './editorial-contract'
-import type { PublicEditorial } from '../types/feed'
+import { validatePublicationV2, type EditorialPublicationV2 } from './editorial-contract-v2'
+import type { PublicEditorial, PublicEditorialV2 } from '../types/feed'
 
 const PUBLIC_DETAIL_COLUMNS = [
   ...FEED_LIST_COLUMNS,
@@ -21,19 +22,33 @@ function missingEditorialTable(error: unknown): boolean {
     && /^(?:D1_ERROR: |Parse error near line \d+: )?no such table: article_editorials(?:: SQLITE_ERROR)?$/.test(error.message)
 }
 
-function editorialProjection(row: DetailRow): PublicEditorial | null {
+function editorialProjection(row: DetailRow): PublicEditorial | PublicEditorialV2 | null {
   if (row.approved_for_publication !== 1 || row.editorial_state !== 'published'
     || typeof row.editorial_publication_json !== 'string'
     || typeof row.editorial_revision !== 'number' || !Number.isInteger(row.editorial_revision)
     || row.editorial_revision < 1 || row.editorial_revision > 2147483647
     || typeof row.editorial_published_at !== 'string') return null
   try {
-    const publication = validateEditorialPublication(parseEditorialJson(row.editorial_publication_json))
-    const source = publication.source
-    if (publication.article_id !== row.url_hash || source.url !== row.url
-      || source.original_url !== row.original_url
-      || source.original_url_provenance !== row.original_url_provenance) return null
-    return { ...publication, revision: row.editorial_revision, published_at: row.editorial_published_at }
+    const parsed = parseEditorialJson(row.editorial_publication_json)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    const version = (parsed as Record<string, unknown>).schema_version
+    if (version === 1) {
+      const publication = validateEditorialPublication(parsed)
+      const source = publication.source
+      if (publication.article_id !== row.url_hash || source.url !== row.url
+        || source.original_url !== row.original_url
+        || source.original_url_provenance !== row.original_url_provenance) return null
+      return { ...publication, revision: row.editorial_revision, published_at: row.editorial_published_at }
+    }
+    if (version === 2) {
+      const publication = validatePublicationV2(parsed) as unknown as EditorialPublicationV2
+      const source = publication.source
+      if (publication.article_id !== row.url_hash || source.url !== row.url
+        || source.original_url !== row.original_url
+        || source.original_url_provenance !== row.original_url_provenance) return null
+      return { ...publication, revision: row.editorial_revision, published_at: row.editorial_published_at }
+    }
+    return null
   } catch { return null }
 }
 
@@ -69,7 +84,16 @@ function canReadBody(row: ArchiveRow): boolean {
 
 function publicResponse(row: DetailRow, content: string | null): Response {
   const data = Object.fromEntries(PUBLIC_DETAIL_COLUMNS.map((column) => [column, row[column]]))
-  return jsonResponse({ data: { ...data, content, editorial: editorialProjection(row) } })
+  const projection = editorialProjection(row)
+  return jsonResponse({ data: {
+    ...data,
+    content,
+    // Keep the v1 public field source-compatible. v2 is an additive field so
+    // old consumers cannot accidentally treat a structurally different draft
+    // as a v1 brief.
+    editorial: projection?.schema_version === 1 ? projection : null,
+    editorial_v2: projection?.schema_version === 2 ? projection : null,
+  } })
 }
 
 /** D1 remains the authority for publication; KV supplies only verified body bytes. */

@@ -1,8 +1,17 @@
 // Types for the Content OS Feed module
 import type { OriginalUrlProvenance } from '@/lib/source-provenance'
 import type { EditorialPublication } from '@/lib/editorial-contract'
+import type { EditorialPublicationV2 } from '@/lib/editorial-contract-v2'
 
 export interface PublicEditorial extends EditorialPublication {
+  revision: number
+  published_at: string
+}
+
+/** v2 is deliberately a separate public shape: callers that consume the
+ * established v1 brief API keep their exact contract and cannot accidentally
+ * read v2-only structure without an explicit version dispatch. */
+export type PublicEditorialV2 = EditorialPublicationV2 & {
   revision: number
   published_at: string
 }
@@ -14,7 +23,10 @@ export interface Article {
   summary?: string
   takeaway?: string
   content?: string | null
+  /** Stable v1 field. It never widens to another schema version. */
   editorial?: PublicEditorial | null
+  /** Additive v2 projection; consumers must choose it deliberately. */
+  editorial_v2?: PublicEditorialV2 | null
   content_format?: 'markdown_v1' | null
   content_quality?: 'verified_fulltext' | 'summary_only' | 'legacy_unverified' | null
   content_hash?: string | null

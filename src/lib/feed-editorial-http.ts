@@ -8,7 +8,9 @@ function reply(value: unknown, status = 200) {
     ...(status === 503 ? { 'Retry-After': '300' } : {}),
   } })
 }
-class EditorialBodyTooLarge extends Error {}
+/** Shared by the versioned manual endpoints so a bounded body is always a
+ * client error, never confused with a transient D1 or provider outage. */
+export class EditorialBodyTooLarge extends Error {}
 
 /** Accept only this path's single decoded Next adapter ID, never query-selected identity. */
 function matchesEditorialUrl(requestUrl: string, articleId: string): boolean {

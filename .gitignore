@@ -57,3 +57,6 @@ build/cache/
 .wrangler/
 /.playwright-cli/
 /output/playwright/
+
+# Local CCG task state
+.ccg/tasks/
